@@ -1,0 +1,15 @@
+# Ignore configuration files that may contain sensitive information.
+/vendor/
+
+# Ignor composer working files
+composer.phar
+composer.lock
+
+# Ignor testing working files
+tests/phpunit.xml
+
+# Ignor config settings with sensative account creds
+config.inc
+
+# Ignor OSX system files
+.DS_Store
