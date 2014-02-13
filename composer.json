@@ -1,9 +1,9 @@
 {
-    "name": "dosomething/message-broker",
+    "name": "dosomething/messagebroker-phplib",
     "type": "library",
-    "description": "A message broker system to cordinate sending messsages to DoSomething.org members.",
-    "keywords": ["message broker"],
-    "homepage": "https://github.com/DoSomething/message-broker",
+    "description": "A library of functionality shared between the components that make up the DoSomething.org Message Broker system.",
+    "keywords": ["message broker php library"],
+    "homepage": "https://github.com/DoSomething/messagebroker-phplib",
     "license" : "MIT",
     "authors": [
     {
