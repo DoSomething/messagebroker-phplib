@@ -4,6 +4,9 @@
  * Message Broker class library
  */
 
+// Load configuration settings - non-Drupal
+require_once(dirname(dirname(__FILE__)) . '/config.inc');
+
 // Use AMQP
 use PhpAmqpLib\Connection\AMQPConnection;
 use PhpAmqpLib\Message\AMQPMessage;
@@ -31,7 +34,6 @@ class MessageBroker
 
       // Use enviroment values set in config.inc if credentials not set
       if (empty($credentials['host']) || empty($credentials['port']) || empty($credentials['username']) || empty($credentials['password'])) {
-        require_once(dirname(dirname(dirname(__FILE__))) . '/config.inc');
         $credentials['host'] = getenv("RABBITMQ_HOST");
         $credentials['port'] = getenv("RABBITMQ_PORT");
         $credentials['username'] = getenv("RABBITMQ_USERNAME");
@@ -40,11 +42,6 @@ class MessageBroker
 
       // Connect
       $this->connection = new AMQPConnection($credentials['host'], $credentials['port'], $credentials['username'], $credentials['password']);
-
-      if(!$this->connection->isConnected()) {
-        throw new Exception('Connection failed.');
-      }
-
     }
 
   /**
@@ -57,41 +54,49 @@ class MessageBroker
    */
   public function produceTransactional($data) {
 
-$bla = TRUE;
-if ($bla) {
-  $bla = TRUE;
-}
-
     $exchangeName = getenv("TRANSACTIONAL_EXCHANGE");
+    $queueName = getenv("TRANSACTIONAL_QUEUE");
+
+    // Confirm config.inc values set
+    if (!$exchangeName || !$queueName) {
+      throw new Exception('config.inc settings missing, exchange and/or queue name not set.');
+    }
 
     // Collect RabbitMQ connection details
     $connection = $this->connection;
     $channel = $connection->channel();
 
+    // Queue
+    $channel = $this->setupQueue($queueName, $channel, NULL);
+
     // Exchange
-    $channel = getExchange($exchangeName, $channel);
+    $channel = $this->setupExchange($exchangeName, $channel);
+
+    // Bind exchange to queue for 'transactional' key
+    // queue_bind($queue, $exchange, $routing_key="", $nowait=false, $arguments=null, $ticket=null)
+    $channel->queue_bind($queueName, $exchangeName, '*.*.transactional');
 
     // Mark messages as persistent by setting the delivery_mode = 2 message property
     // Supported message properties: https://github.com/videlalvaro/php-amqplib/blob/master/doc/AMQPMessage.md
     $payload = new AMQPMessage($data, array('delivery_mode' => 2));
 
-    // @todo: Exchange keys based on the transaction type:
+    // @todo: Set keys based on the transaction type to direct message entries
+    // in different queues based on values passed in $data:
     // - user.password_reset.transactional
     // - user.signup.transactional
     // - campaign.signup.transactional
     // - campaign.report_back.transactional
-    // $keys = setKeys($data);
-    $keys = 'campaign.signup.transactional';
+    $routingKeys = 'campaign.signup.transactional';
 
-    $channel->basic_publish($payload, $exchangeName, $keys);
+    // basic_publish($msg, $exchange="", $routing_key="", $mandatory=false, $immediate=false, $ticket=null)
+    $channel->basic_publish($payload, $exchangeName, $routingKeys);
 
     $channel->close();
     $connection->close();
-
   }
 
   /**
-   * getExchange - common create exchange functionality used to ensure exchange
+   * setupExchange - common create exchange functionality used to ensure exchange
    * settings are the same for both producers and consumers. A producer will
    * never communicate with a queue directly, it's always through an exchange.
    *
@@ -104,33 +109,36 @@ if ($bla) {
    * @return object $channel
    *
    */
-  protected function getExchange($exchangeName, $channel) {
+  private function setupExchange($exchangeName, $channel) {
+
+    /*
+     * passive: The exchange will survive server restarts
+     *
+     * durable: The exchange won't be deleted once the channel is closed
+     *
+     * auto_delete: The exchange won't be deleted once the channel is closed.
+     *   The exchange will survive server restarts
+     *
+     * delete the exchange when something has bound to it and then
+     * everything has unbound from it", which again only really makes sense in
+     * the context of exchange to exchange bindings
+     * https://groups.google.com/forum/#!topic/rabbitmq-discuss/YcM_zElQcq8
+     */
 
     $exchange_options = array(
       'passive' => FALSE,
       'durable' => TRUE,
-      'auto_delete' => FALSE,
-      'nowait' => TRUE
+      'auto_delete' => FALSE
     );
 
     // $ rabbitmqctl list_exchanges
     $channel->exchange_declare($exchangeName,
-                              'direct',
+                              'topic',
                               $exchange_options['passive'],
                               $exchange_options['durable'],
                               $exchange_options['auto_delete']);
 
     return $channel;
-  }
-
-  /**
-   * consumeTransactional - called to setup consumer script of transactional
-   * message entries in the queue.
-   */
-  public function consumeTransactional() {
-
-    // Stub out consume transactional
-
   }
 
   /**
@@ -150,34 +158,31 @@ if ($bla) {
    * @return object
    *
    */
-  protected function getQueue(string $queueName, $channel, $param) {
+  private function setupQueue($queueName, $channel, $param = NULL) {
 
     /*
-     * passive:
+     * passive: If set, the server will reply with Declare-Ok if the queue
+     * already exists with the same name, and raise an error if not. The client
+     * can use this to check whether a queue exists without modifying the server
+     * state. When set, all other method fields except name and no-wait are
+     * ignored. A declare with both passive and no-wait has no effect.
+     * Arguments are compared for semantic equivalence.
      *
-     * durable: Keep queue even if RabbitMQ  is shut down. Note that messages
+     * durable: Keep queue even if RabbitMQ is shut down. Note that messages
      * must also be marked as durable in order for messages in a durable queue
      * to survive a queue restart.
      *
-     * exclusive:
+     * exclusive: Yhe queue can be accessed in other channels
      *
-     * auto_delete:
+     * auto_delete: The queue won't be deleted once the channel is closed. If
+     * set, the queue is deleted when all consumers have finished using it.
      */
-
     $queue_options = array(
       'passive'     => FALSE,
       'durable'     => TRUE,
       'exclusive'   => FALSE,
       'auto_delete' => FALSE,
-
-      'nowait'      => 'false',
-      'arguments'   => NULL,
-      'ticket'      => NULL,
     );
-
-    // Old produceTransactional call
-    // Must be the same for both producer and consumer
-    // $channel->queue_declare($queueName, false, true, false, false);
 
     $channel->queue_declare($queueName,
       $queue_options['passive'],
@@ -186,19 +191,6 @@ if ($bla) {
       $queue_options['auto_delete']);
 
     return $channel;
-  }
-
-  /**
-   * queueStatus - called to gather details on a specific queue status.
-   *
-   * @param array $queue
-   *  Values used to generate a production entry
-   * 
-   */
-  public function queueStatus($queue) {
-
-    // list(name, jobs, consumers) = queue_declare(queue=queuename, passive=True)
-
   }
 
 }
