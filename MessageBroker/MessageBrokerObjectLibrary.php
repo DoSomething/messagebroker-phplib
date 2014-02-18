@@ -38,10 +38,16 @@ class MessageBroker
         $credentials['port'] = getenv("RABBITMQ_PORT");
         $credentials['username'] = getenv("RABBITMQ_USERNAME");
         $credentials['password'] = getenv("RABBITMQ_PASSWORD");
+        $credentials['vhost'] = getenv("RABBITMQ_DOSOMETHING_VHOST");
       }
 
       // Connect
-      $this->connection = new AMQPConnection($credentials['host'], $credentials['port'], $credentials['username'], $credentials['password']);
+      $this->connection = new AMQPConnection(
+        $credentials['host'],
+        $credentials['port'],
+        $credentials['username'],
+        $credentials['password'],
+        $credentials['vhost']);
     }
 
   /**

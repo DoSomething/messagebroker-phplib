@@ -23,3 +23,5 @@ putenv("RABBITMQ_PASSWORD=<PASSWORD>");
 
 // RabbitMQ Queues
 putenv("TRANSACTIONAL_EXCHANGE=transactionals");
+putenv("TRANSACTIONAL_QUEUE=transactionals-queue");
+putenv("RABBITMQ_DOSOMETHING_VHOST=<VHOST>");
