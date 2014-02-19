@@ -5,6 +5,17 @@
  */
 
 // Load configuration settings - non-Drupal
+// Load settings based on arguments passed to sript. It's possible to connect to
+// Mandrill using a test key (default) that skips sending messages to actual
+// users. The test key uses a test email address set via the Mandrill admin
+// dashboard when in test mode. Use "php message-broker-consumer.php 1" to use
+// the production key.
+if (isset($argv)) {
+  $useProductiontKey = $argv[1];
+}
+else {
+  $useProductiontKey = NULL;
+}
 require_once(dirname(dirname(__FILE__)) . '/config.inc');
 
 // Use AMQP
@@ -38,16 +49,32 @@ class MessageBroker
         $credentials['port'] = getenv("RABBITMQ_PORT");
         $credentials['username'] = getenv("RABBITMQ_USERNAME");
         $credentials['password'] = getenv("RABBITMQ_PASSWORD");
-        $credentials['vhost'] = getenv("RABBITMQ_DOSOMETHING_VHOST");
+        
+        if (getenv("RABBITMQ_DOSOMETHING_VHOST") != FALSE) {
+          $credentials['vhost'] = getenv("RABBITMQ_DOSOMETHING_VHOST");
+        }
+        else {
+          $credentials['vhost'] = '';
+        }
+        
       }
 
-      // Connect
-      $this->connection = new AMQPConnection(
-        $credentials['host'],
-        $credentials['port'],
-        $credentials['username'],
-        $credentials['password'],
-        $credentials['vhost']);
+      // Connect - AMQPConnection(HOST, PORT, USER, PASS, VHOST);
+      if ($credentials['vhost'] != '') {
+        $this->connection = new AMQPConnection(
+          $credentials['host'],
+          $credentials['port'],
+          $credentials['username'],
+          $credentials['password'],
+          $credentials['vhost']);
+      }
+      else {
+        $this->connection = new AMQPConnection(
+          $credentials['host'],
+          $credentials['port'],
+          $credentials['username'],
+          $credentials['password']);
+      }
     }
 
   /**
@@ -115,7 +142,7 @@ class MessageBroker
    * @return object $channel
    *
    */
-  private function setupExchange($exchangeName, $channel) {
+  public function setupExchange($exchangeName, $channel) {
 
     /*
      * passive: The exchange will survive server restarts
@@ -164,7 +191,7 @@ class MessageBroker
    * @return object
    *
    */
-  private function setupQueue($queueName, $channel, $param = NULL) {
+  public function setupQueue($queueName, $channel, $param = NULL) {
 
     /*
      * passive: If set, the server will reply with Declare-Ok if the queue
