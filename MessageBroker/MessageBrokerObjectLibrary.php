@@ -1,5 +1,4 @@
 <?php
-
 /*
  * Message Broker class library
  */
@@ -10,12 +9,6 @@
 // users. The test key uses a test email address set via the Mandrill admin
 // dashboard when in test mode. Use "php message-broker-consumer.php 1" to use
 // the production key.
-if (isset($argv)) {
-  $useProductiontKey = $argv[1];
-}
-else {
-  $useProductiontKey = NULL;
-}
 require_once(dirname(dirname(__FILE__)) . '/config.inc');
 
 // Use AMQP
