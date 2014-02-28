@@ -3,14 +3,6 @@
  * Message Broker class library
  */
 
-// Load configuration settings - non-Drupal
-// Load settings based on arguments passed to sript. It's possible to connect to
-// Mandrill using a test key (default) that skips sending messages to actual
-// users. The test key uses a test email address set via the Mandrill admin
-// dashboard when in test mode. Use "php message-broker-consumer.php 1" to use
-// the production key.
-require_once(dirname(dirname(__FILE__)) . '/config.inc');
-
 // Use AMQP
 use PhpAmqpLib\Connection\AMQPConnection;
 use PhpAmqpLib\Message\AMQPMessage;
@@ -38,6 +30,13 @@ class MessageBroker
 
       // Use enviroment values set in config.inc if credentials not set
       if (empty($credentials['host']) || empty($credentials['port']) || empty($credentials['username']) || empty($credentials['password'])) {
+        if (!file_exists(dirname(dirname(__FILE__)) . '/config.inc')) {
+          throw new Exception("Could not find config.inc. Please make a copy of config.inc.example
+            and add the appropreate settings defined within the file.");
+        }
+        else {
+          require_once(dirname(dirname(__FILE__)) . '/config.inc');
+        }
         $credentials['host'] = getenv("RABBITMQ_HOST");
         $credentials['port'] = getenv("RABBITMQ_PORT");
         $credentials['username'] = getenv("RABBITMQ_USERNAME");
