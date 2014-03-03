@@ -11,7 +11,8 @@ class MessageBroker
 {
   public $connection = NULL;
   public $transactionalExchange;
-  public $queueName;
+  public $transactionalQueue;
+  public $userRegistrationQueue;
 
   /**
     * Constructor
@@ -76,7 +77,6 @@ class MessageBroker
 
       // Set config vars for use in methods
       $this->transactionalExchange = $config['transactionalExchange'];
-      $this->queueName = $config['queueName'];
 
     }
 
@@ -91,10 +91,11 @@ class MessageBroker
   public function produceTransactional($data) {
 
     $exchangeName = $this->transactionalExchange;
-    $queueName = $this->queueName;
+    $transactionalQueue = $this->transactionalQueue = 'transactionalQueue';
+    $userRegistrationQueue = $this->userRegistrationQueue = 'userRegistration-Queue';
 
     // Confirm config.inc values set
-    if (!$exchangeName || !$queueName) {
+    if (!$exchangeName) {
       throw new Exception('config.inc settings missing, exchange and/or queue name not set.');
     }
 
@@ -102,27 +103,40 @@ class MessageBroker
     $connection = $this->connection;
     $channel = $connection->channel();
 
-    // Queue
-    $channel = $this->setupQueue($queueName, $channel, NULL);
-
     // Exchange
     $channel = $this->setupExchange($exchangeName, $channel);
 
+    // Queues
+    $channel = $this->setupQueue($transactionalQueue, $channel, NULL);
+    $channel = $this->setupQueue($userRegistrationQueue, $channel, NULL);
+
     // Bind exchange to queue for 'transactional' key
     // queue_bind($queue, $exchange, $routing_key="", $nowait=false, $arguments=null, $ticket=null)
-    $channel->queue_bind($queueName, $exchangeName, '*.*.transactional');
+    $channel->queue_bind($transactionalQueue, $exchangeName, '*.*.transactional');
+    $channel->queue_bind($userRegistrationQueue, $exchangeName, 'user.registration.*');
 
     // Mark messages as persistent by setting the delivery_mode = 2 message property
     // Supported message properties: https://github.com/videlalvaro/php-amqplib/blob/master/doc/AMQPMessage.md
     $payload = new AMQPMessage($data, array('delivery_mode' => 2));
 
-    // @todo: Set keys based on the transaction type to direct message entries
-    // in different queues based on values passed in $data:
-    // - user.password_reset.transactional
-    // - user.signup.transactional
-    // - campaign.signup.transactional
-    // - campaign.report_back.transactional
-    $routingKeys = 'campaign.signup.transactional';
+    // Routing
+    switch ($data['action']) {
+      case 'campaign_signup':
+        $routingKeys = 'campaign.signup.transactional';
+        break;
+      case 'campaign_reportback':
+        $routingKeys = 'campaign.campaign_reportback.transactional';
+        break;
+      case 'user_password':
+        $routingKeys = 'user.password_reset.transactional';
+        break;
+      case 'user_register':
+        $routingKeys = 'user.register.transactional';
+        break;
+
+      default:
+
+    }
 
     // basic_publish($msg, $exchange="", $routing_key="", $mandatory=false, $immediate=false, $ticket=null)
     $channel->basic_publish($payload, $exchangeName, $routingKeys);
