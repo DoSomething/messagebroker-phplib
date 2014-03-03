@@ -10,6 +10,8 @@ use PhpAmqpLib\Message\AMQPMessage;
 class MessageBroker
 {
   public $connection = NULL;
+  public $transactionalExchange;
+  public $queueName;
 
   /**
     * Constructor
@@ -19,7 +21,7 @@ class MessageBroker
     *   
     * @return object
     */
-    public function __construct($credentials = array()) {
+    public function __construct($credentials = array(), $config = array()) {
 
       // Cannot continue if the library wasn't loaded.
       if (!class_exists('PhpAmqpLib\Connection\AMQPConnection') || !class_exists('PhpAmqpLib\Message\AMQPMessage')) {
@@ -48,7 +50,11 @@ class MessageBroker
         else {
           $credentials['vhost'] = '';
         }
-        
+
+        // Set config vars
+        $config['transactionalExchange'] = getenv("TRANSACTIONAL_EXCHANGE");
+        $config['queueName'] = getenv("TRANSACTIONAL_QUEUE");
+
       }
 
       // Connect - AMQPConnection(HOST, PORT, USER, PASS, VHOST);
@@ -67,6 +73,11 @@ class MessageBroker
           $credentials['username'],
           $credentials['password']);
       }
+
+      // Set config vars for use in methods
+      $this->transactionalExchange = $config['transactionalExchange'];
+      $this->queueName = $config['queueName'];
+
     }
 
   /**
@@ -79,8 +90,8 @@ class MessageBroker
    */
   public function produceTransactional($data) {
 
-    $exchangeName = getenv("TRANSACTIONAL_EXCHANGE");
-    $queueName = getenv("TRANSACTIONAL_QUEUE");
+    $exchangeName = $this->transactionalExchange;
+    $queueName = $this->queueName;
 
     // Confirm config.inc values set
     if (!$exchangeName || !$queueName) {
