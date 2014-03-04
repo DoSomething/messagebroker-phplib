@@ -54,7 +54,6 @@ class MessageBroker
 
         // Set config vars
         $config['transactionalExchange'] = getenv("TRANSACTIONAL_EXCHANGE");
-        $config['queueName'] = getenv("TRANSACTIONAL_QUEUE");
 
       }
 
@@ -92,11 +91,13 @@ class MessageBroker
 
     $exchangeName = $this->transactionalExchange;
     $transactionalQueue = $this->transactionalQueue = 'transactionalQueue';
-    $userRegistrationQueue = $this->userRegistrationQueue = 'userRegistration-Queue';
+    $userRegistrationQueue = $this->userRegistrationQueue = 'userRegistrationQueue';
 
     // Confirm config.inc values set
     if (!$exchangeName) {
-      throw new Exception('config.inc settings missing, exchange and/or queue name not set.');
+      throw new Exception('config.inc settings missing, exchange and/or
+        queue name not set. If this is on a Drupal website check the settings
+        at admin/config/services/message-broker-producer/mq-settings');
     }
 
     // Collect RabbitMQ connection details
@@ -120,22 +121,28 @@ class MessageBroker
     $payload = new AMQPMessage($data, array('delivery_mode' => 2));
 
     // Routing
-    switch ($data['action']) {
+    $payload_values = json_decode($data);
+    switch ($payload_values->activity) {
       case 'campaign_signup':
+      case 'campaign-signup':
         $routingKeys = 'campaign.signup.transactional';
         break;
       case 'campaign_reportback':
+      case 'campaign-reportback':
         $routingKeys = 'campaign.campaign_reportback.transactional';
         break;
       case 'user_password':
+      case 'user-password':
         $routingKeys = 'user.password_reset.transactional';
         break;
       case 'user_register':
-        $routingKeys = 'user.register.transactional';
+      case 'user-register':
+        $routingKeys = 'user.registration.transactional';
         break;
 
       default:
-
+        throw new Exception('Undefined activity "' . $payload_values->activity .
+          '" sent to produceTransactional in messagebroker-phplib.');
     }
 
     // basic_publish($msg, $exchange="", $routing_key="", $mandatory=false, $immediate=false, $ticket=null)
