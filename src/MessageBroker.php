@@ -31,32 +31,6 @@ class MessageBroker
           rabbitmq INSTALL file for more details.");
       }
 
-      // Use enviroment values set in config.inc if credentials not set
-      if (empty($credentials['host']) || empty($credentials['port']) || empty($credentials['username']) || empty($credentials['password'])) {
-        if (!file_exists(dirname(dirname(__FILE__)) . '/config.inc')) {
-          throw new Exception("Could not find config.inc. Please make a copy of config.inc.example
-            and add the appropreate settings defined within the file.");
-        }
-        else {
-          require_once(dirname(dirname(__FILE__)) . '/config.inc');
-        }
-        $credentials['host'] = getenv("RABBITMQ_HOST");
-        $credentials['port'] = getenv("RABBITMQ_PORT");
-        $credentials['username'] = getenv("RABBITMQ_USERNAME");
-        $credentials['password'] = getenv("RABBITMQ_PASSWORD");
-        
-        if (getenv("RABBITMQ_VHOST") != FALSE) {
-          $credentials['vhost'] = getenv("RABBITMQ_VHOST");
-        }
-        else {
-          $credentials['vhost'] = '';
-        }
-
-        // Set config vars
-        $config['transactionalExchange'] = getenv("TRANSACTIONAL_EXCHANGE");
-
-      }
-
       // Connect - AMQPConnection(HOST, PORT, USER, PASS, VHOST);
       if ($credentials['vhost'] != '') {
         $this->connection = new AMQPConnection(
