@@ -24,4 +24,4 @@
 require_once __DIR__ . '/vendor/autoload.php';
 
 // Load library class
-require(dirname(__FILE__) . '/MessageBroker/MessageBrokerObjectLibrary.php');
+require(dirname(__FILE__) . '/src/MessageBroker.php');

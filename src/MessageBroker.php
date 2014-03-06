@@ -45,8 +45,8 @@ class MessageBroker
         $credentials['username'] = getenv("RABBITMQ_USERNAME");
         $credentials['password'] = getenv("RABBITMQ_PASSWORD");
         
-        if (getenv("RABBITMQ_DOSOMETHING_VHOST") != FALSE) {
-          $credentials['vhost'] = getenv("RABBITMQ_DOSOMETHING_VHOST");
+        if (getenv("RABBITMQ_VHOST") != FALSE) {
+          $credentials['vhost'] = getenv("RABBITMQ_VHOST");
         }
         else {
           $credentials['vhost'] = '';
