@@ -15,43 +15,171 @@ class MessageBroker
   public $userRegistrationQueue;
 
   /**
-    * Constructor
-    *
-    * @param array $credentials
-    *   RabbitMQ connection details
-    *   
-    * @return object
-    */
-    public function __construct($credentials = array(), $config = array()) {
+   * The exchange name.
+   *
+   * @var string
+   */
+  private $exchangeName;
 
-      // Cannot continue if the library wasn't loaded.
-      if (!class_exists('PhpAmqpLib\Connection\AMQPConnection') || !class_exists('PhpAmqpLib\Message\AMQPMessage')) {
-        throw new Exception("Could not find php-amqplib. Please download and
-          install from https://github.com/videlalvaro/php-amqplib/tree/v1.0. See
-          rabbitmq INSTALL file for more details.");
-      }
+  /**
+   * The exchange type. Valid types: direct, topic, headers, fanout.
+   *
+   * @var string
+   */
+  private $exchangeType;
 
-      // Connect - AMQPConnection(HOST, PORT, USER, PASS, VHOST);
-      if ($credentials['vhost'] != '') {
-        $this->connection = new AMQPConnection(
-          $credentials['host'],
-          $credentials['port'],
-          $credentials['username'],
-          $credentials['password'],
-          $credentials['vhost']);
+  /**
+   * The queue name.
+   *
+   * @var string
+   */
+  private $queueName;
+
+  /**
+   * Routing key for routing messages between exchanges and queues.
+   *
+   * @var string
+   */
+  private $routingKey;
+
+  /**
+   * Constructor
+   *
+   * @param array $credentials
+   *   RabbitMQ connection details
+   *
+   * @return object
+   */
+  public function __construct($credentials = array(), $config = array()) {
+
+    // Cannot continue if the library wasn't loaded.
+    if (!class_exists('PhpAmqpLib\Connection\AMQPConnection') || !class_exists('PhpAmqpLib\Message\AMQPMessage')) {
+      throw new Exception("Could not find php-amqplib. Please download and
+        install from https://github.com/videlalvaro/php-amqplib/tree/v1.0. See
+        rabbitmq INSTALL file for more details.");
+    }
+
+    // Use enviroment values set in config.inc if credentials not set
+    if (empty($credentials['host']) || empty($credentials['port']) || empty($credentials['username']) || empty($credentials['password'])) {
+      if (!file_exists(dirname(dirname(__FILE__)) . '/config.inc')) {
+        throw new Exception("Could not find config.inc. Please make a copy of config.inc.example
+          and add the appropreate settings defined within the file.");
       }
       else {
-        $this->connection = new AMQPConnection(
-          $credentials['host'],
-          $credentials['port'],
-          $credentials['username'],
-          $credentials['password']);
+        require_once(dirname(dirname(__FILE__)) . '/config.inc');
+      }
+      $credentials['host'] = getenv("RABBITMQ_HOST");
+      $credentials['port'] = getenv("RABBITMQ_PORT");
+      $credentials['username'] = getenv("RABBITMQ_USERNAME");
+      $credentials['password'] = getenv("RABBITMQ_PASSWORD");
+
+      if (getenv("RABBITMQ_VHOST") != FALSE) {
+        $credentials['vhost'] = getenv("RABBITMQ_VHOST");
+      }
+      else {
+        $credentials['vhost'] = '';
       }
 
-      // Set config vars for use in methods
-      $this->transactionalExchange = $config['transactionalExchange'];
-
+      // Set config vars
+      $config['transactionalExchange'] = getenv("TRANSACTIONAL_EXCHANGE");
     }
+
+    // Connect - AMQPConnection(HOST, PORT, USER, PASS, VHOST);
+    if ($credentials['vhost'] != '') {
+      $this->connection = new AMQPConnection(
+        $credentials['host'],
+        $credentials['port'],
+        $credentials['username'],
+        $credentials['password'],
+        $credentials['vhost']);
+    }
+    else {
+      $this->connection = new AMQPConnection(
+        $credentials['host'],
+        $credentials['port'],
+        $credentials['username'],
+        $credentials['password']);
+    }
+
+    // Set config vars for use in methods
+    $this->transactionalExchange = $config['transactionalExchange'];
+    $this->exchangeName = $config['exchangeName'];
+    $this->exchangeType = $config['exchangeType'];
+    $this->queueName = $config['queueName'];
+    $this->routingKey = $config['routingKey'];
+  }
+
+  /**
+   * Publish a message to the message broker.
+   *
+   * @param string $payload
+   *  Data to wrap in the message.
+   */
+  public function publishMessage($payload) {
+    $channel = $this->connection->channel();
+
+    // Queue and exchange setup
+    $this->setupQueue($this->queueName, $channel);
+    $this->setupExchange($this->exchangeName, $this->exchangeType, $channel);
+
+    // Bind the queue to the exchange
+    $channel->queue_bind($this->queueName, $this->exchangeName, $this->routingKey);
+
+    $messageProperties = array(
+      'delivery_mode' => 2,
+    );
+    $message = new AMQPMessage($payload, $messageProperties);
+    $channel->basic_publish($message, $this->exchangeName, $this->routingKey);
+
+    $channel->close();
+    $this->connection->close();
+  }
+
+  /**
+   * Consume messages from the message broker queue.
+   *
+   * @param $callback
+   *  Callback to handle messages the consumer receives.
+   */
+  public function consumeMessage($callback) {
+    $channel = $this->connection->channel();
+
+    // Queue and exchange setup
+    $this->setupQueue($this->queueName, $channel);
+    $this->setupExchange($this->exchangeName, $this->exchangeType, $channel);
+
+    // Bind the queue to the exchange
+    $channel->queue_bind($this->queueName, $this->exchangeName, $this->routingKey);
+
+    $consumeOptions = array(
+      'consumer_tag' => '',
+      'no_local' => FALSE,
+      'no_ack' => FALSE,
+      'exclusive' => FALSE,
+      'nowait' => FALSE,
+    );
+
+    // Start the consumer
+    $channel->basic_consume(
+      $this->queuename,
+      $consumeOptions['consumer_tag'],
+      $consumeOptions['no_local'],
+      $consumeOptions['no_ack'],
+      $consumeOptions['exclusive'],
+      $consumeOptions['nowait'],
+      $callback
+    );
+
+    // Wait for messages on the channel
+    echo ' [*] Waiting for Unsubscribe messages. To exit press CTRL+C', "\n";
+    while (count($channel->callbacks)) {
+      $channel->wait();
+    }
+
+    // Clean up
+    $channel->close();
+    $this->connection->close();
+  }
 
   /**
    * produceTransactional - called to trigger production of a transactional
@@ -59,7 +187,6 @@ class MessageBroker
    *
    * @param array $data
    *  Message data to be passed through broker
-   * 
    */
   public function produceTransactional($data) {
 
@@ -79,7 +206,7 @@ class MessageBroker
     $channel = $connection->channel();
 
     // Exchange
-    $channel = $this->setupExchange($exchangeName, $channel);
+    $channel = $this->setupExchange($exchangeName, 'topic', $channel);
 
     // Queues
     $channel = $this->setupQueue($transactionalQueue, $channel, NULL);
@@ -134,13 +261,16 @@ class MessageBroker
    * @param string $exchangeName
    *  Name of the exchange that will bind to a queue
    *
+   * @param string $exchangeType
+   *  The exchange type
+   *
    * @param object $channel
    *  The channel connection that the queue should use.
    *
    * @return object $channel
    *
    */
-  public function setupExchange($exchangeName, $channel) {
+  public function setupExchange($exchangeName, $exchangeType, $channel) {
 
     /*
      * passive: The exchange will survive server restarts
@@ -164,7 +294,7 @@ class MessageBroker
 
     // $ rabbitmqctl list_exchanges
     $channel->exchange_declare($exchangeName,
-                              'topic',
+                              $exchangeType,
                               $exchange_options['passive'],
                               $exchange_options['durable'],
                               $exchange_options['auto_delete']);
