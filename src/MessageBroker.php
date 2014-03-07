@@ -15,25 +15,25 @@ class MessageBroker
   public $userRegistrationQueue;
 
   /**
-   * The exchange name.
+   * Collection of consume options.
    *
-   * @var string
+   * @var array
    */
-  private $exchangeName;
+  private $consumeOptions;
 
   /**
-   * The exchange type. Valid types: direct, topic, headers, fanout.
+   * Collection of exchange options.
    *
-   * @var string
+   * @var array
    */
-  private $exchangeType;
+  private $exchangeOptions;
 
   /**
-   * The queue name.
+   * Collection of queue options.
    *
-   * @var string
+   * @var array
    */
-  private $queueName;
+  private $queueOptions;
 
   /**
    * Routing key for routing messages between exchanges and queues.
@@ -76,11 +76,32 @@ class MessageBroker
         $credentials['password']);
     }
 
+    $this->consumeOptions = array(
+      'consumer_tag' => isset($config['consume']['consumer_tag']) ? $config['consume']['consumer_tag'] : '',
+      'no_local' => isset($config['consume']['no_local']) ? $config['consume']['no_local'] : FALSE,
+      'no_ack' => isset($config['consume']['no_ack']) ? $config['consume']['no_ack'] : TRUE,
+      'exclusive' => isset($config['consume']['exclusive']) ? $config['consume']['exclusive'] : FALSE,
+      'nowait' => isset($config['consume']['nowait']) ? $config['consume']['nowait'] : FALSE,
+    );
+
+    $this->exchangeOptions = array(
+      'name' => isset($config['exchange']['name']) ? $config['exchange']['name'] : '',
+      'type' => isset($config['exchange']['type']) ? $config['exchange']['type'] : '',
+      'passive' => isset($config['exchange']['passive']) ? $config['exchange']['passive'] : FALSE,
+      'durable' => isset($config['exchange']['durable']) ? $config['exchange']['durable'] : FALSE,
+      'auto_delete' => isset($config['exchange']['auto_delete']) ? $config['exchange']['auto_delete'] : FALSE,
+    );
+
+    $this->queueOptions = array(
+      'name' => isset($config['queue']['name']) ? $config['queue']['name'] : '',
+      'passive' => isset($config['queue']['passive']) ? $config['queue']['passive'] : '',
+      'durable' => isset($config['queue']['durable']) ? $config['queue']['durable'] : '',
+      'exclusive' => isset($config['queue']['exclusive']) ? $config['queue']['exclusive'] : '',
+      'auto_delete' => isset($config['queue']['auto_delete']) ? $config['queue']['auto_delete'] : '',
+    );
+
     // Set config vars for use in methods
     $this->transactionalExchange = $config['transactionalExchange'];
-    $this->exchangeName = $config['exchangeName'];
-    $this->exchangeType = $config['exchangeType'];
-    $this->queueName = $config['queueName'];
     $this->routingKey = $config['routingKey'];
   }
 
@@ -94,17 +115,17 @@ class MessageBroker
     $channel = $this->connection->channel();
 
     // Queue and exchange setup
-    $this->setupQueue($this->queueName, $channel);
-    $this->setupExchange($this->exchangeName, $this->exchangeType, $channel);
+    $this->setupQueue($this->queueOptions['name'], $channel);
+    $this->setupExchange($this->exchangeOptions['name'], $this->exchangeOptions['type'], $channel);
 
     // Bind the queue to the exchange
-    $channel->queue_bind($this->queueName, $this->exchangeName, $this->routingKey);
+    $channel->queue_bind($this->queueOptions['name'], $this->exchangeOptions['name'], $this->routingKey);
 
     $messageProperties = array(
       'delivery_mode' => 2,
     );
     $message = new AMQPMessage($payload, $messageProperties);
-    $channel->basic_publish($message, $this->exchangeName, $this->routingKey);
+    $channel->basic_publish($message, $this->exchangeOptions['name'], $this->routingKey);
 
     $channel->close();
     $this->connection->close();
@@ -120,28 +141,20 @@ class MessageBroker
     $channel = $this->connection->channel();
 
     // Queue and exchange setup
-    $this->setupQueue($this->queueName, $channel);
-    $this->setupExchange($this->exchangeName, $this->exchangeType, $channel);
+    $this->setupQueue($this->queueOptions['name'], $channel);
+    $this->setupExchange($this->exchangeOptions['name'], $this->exchangeOptions['type'], $channel);
 
     // Bind the queue to the exchange
-    $channel->queue_bind($this->queueName, $this->exchangeName, $this->routingKey);
-
-    $consumeOptions = array(
-      'consumer_tag' => '',
-      'no_local' => FALSE,
-      'no_ack' => FALSE,
-      'exclusive' => FALSE,
-      'nowait' => FALSE,
-    );
+    $channel->queue_bind($this->queueOptions['name'], $this->exchangeOptions['name'], $this->routingKey);
 
     // Start the consumer
     $channel->basic_consume(
-      $this->queuename,
-      $consumeOptions['consumer_tag'],
-      $consumeOptions['no_local'],
-      $consumeOptions['no_ack'],
-      $consumeOptions['exclusive'],
-      $consumeOptions['nowait'],
+      $this->queueOptions['name'],
+      $this->consumeOptions['consumer_tag'],
+      $this->consumeOptions['no_local'],
+      $this->consumeOptions['no_ack'],
+      $this->consumeOptions['exclusive'],
+      $this->consumeOptions['nowait'],
       $callback
     );
 
@@ -261,18 +274,12 @@ class MessageBroker
      * https://groups.google.com/forum/#!topic/rabbitmq-discuss/YcM_zElQcq8
      */
 
-    $exchange_options = array(
-      'passive' => FALSE,
-      'durable' => TRUE,
-      'auto_delete' => FALSE
-    );
-
     // $ rabbitmqctl list_exchanges
     $channel->exchange_declare($exchangeName,
-                              $exchangeType,
-                              $exchange_options['passive'],
-                              $exchange_options['durable'],
-                              $exchange_options['auto_delete']);
+      $exchangeType,
+      $this->exchangeOptions['passive'],
+      $this->exchangeOptions['durable'],
+      $this->exchangeOptions['auto_delete']);
 
     return $channel;
   }
@@ -313,18 +320,12 @@ class MessageBroker
      * auto_delete: The queue won't be deleted once the channel is closed. If
      * set, the queue is deleted when all consumers have finished using it.
      */
-    $queue_options = array(
-      'passive'     => FALSE,
-      'durable'     => TRUE,
-      'exclusive'   => FALSE,
-      'auto_delete' => FALSE,
-    );
 
     $channel->queue_declare($queueName,
-      $queue_options['passive'],
-      $queue_options['durable'],
-      $queue_options['exclusive'],
-      $queue_options['auto_delete']);
+      $this->queueOptions['passive'],
+      $this->queueOptions['durable'],
+      $this->queueOptions['exclusive'],
+      $this->queueOptions['auto_delete']);
 
     return $channel;
   }
