@@ -102,7 +102,7 @@ class MessageBroker
 
     // Set config vars for use in methods
     $this->transactionalExchange = $config['transactionalExchange'];
-    $this->routingKey = $config['routingKey'];
+    $this->routingKey = isset($config['routingKey']) ? $config['routingKey'] : '';
   }
 
   /**
