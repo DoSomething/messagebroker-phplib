@@ -256,7 +256,6 @@ class MessageBroker
    *  The channel connection that the queue should use.
    *
    * @return object $channel
-   *
    */
   public function setupExchange($exchangeName, $exchangeType, $channel) {
 
@@ -295,13 +294,9 @@ class MessageBroker
    * @param object $channel
    *  The channel connection that the queue should use.
    *
-   * @param array $param
-   *  Future use, possible flag for different queues.
-   *
    * @return object
-   *
    */
-  public function setupQueue($queueName, $channel, $param = NULL) {
+  public function setupQueue($queueName, $channel) {
 
     /*
      * passive: If set, the server will reply with Declare-Ok if the queue
