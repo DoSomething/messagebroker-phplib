@@ -9,10 +9,11 @@ use PhpAmqpLib\Message\AMQPMessage;
 
 class MessageBroker
 {
+  
+  /**
+   * AMQPConnection
+   */
   public $connection = NULL;
-  public $transactionalExchange;
-  public $transactionalQueue;
-  public $userRegistrationQueue;
 
   /**
    * Collection of consume options.
@@ -101,7 +102,25 @@ class MessageBroker
     );
 
     // Set config vars for use in methods
-    $this->transactionalExchange = $config['transactionalExchange'];
+
+    // Routing Key is the routing value for topic exchanges, example:
+    // '*.*.transactional'
+    // $channel->queue_bind($transactionalQueue, $exchangeName, '*.*.transactional');
+    // This value may not be relivant for non "topic" exchanges??
+
+    // There might be some confusion between using this setting for queue_bind
+    // and basic_publish.
+
+    // -> queue_bind routing keys define the combination of keys
+    // of messages that get routed to certain queues.
+    // -> basic_publish sets the keys assigned to a message
+
+    // An exchange with a routing key binding of *.*.transactional will get an
+    // entry for all messages sent with a routing key of:
+    // user.registration.transactional
+
+    // In the case of "direct" exchanges, the routing key must be a exact match
+    // with the routing key assigned to the message (or bank)
     $this->routingKey = isset($config['routingKey']) ? $config['routingKey'] : '';
   }
 
@@ -119,8 +138,10 @@ class MessageBroker
     $this->setupExchange($this->exchangeOptions['name'], $this->exchangeOptions['type'], $channel);
 
     // Bind the queue to the exchange
+    // @todo: Support for more than one queue and the related biding
     $channel->queue_bind($this->queueOptions['name'], $this->exchangeOptions['name'], $this->routingKey);
 
+    // @todo: 'delivery_mode' needs to be a setting as not all messages will require acknowledgement
     $messageProperties = array(
       'delivery_mode' => 2,
     );
@@ -145,6 +166,7 @@ class MessageBroker
     $this->setupExchange($this->exchangeOptions['name'], $this->exchangeOptions['type'], $channel);
 
     // Bind the queue to the exchange
+    // @todo: Look into routingKey
     $channel->queue_bind($this->queueOptions['name'], $this->exchangeOptions['name'], $this->routingKey);
 
     // Start the consumer
@@ -178,9 +200,10 @@ class MessageBroker
    */
   public function produceTransactional($data) {
 
-    $exchangeName = $this->transactionalExchange;
-    $transactionalQueue = $this->transactionalQueue = 'transactionalQueue';
-    $userRegistrationQueue = $this->userRegistrationQueue = 'userRegistrationQueue';
+    $exchangeName = $this->exchangeOptions['name'];
+    // @todo: Support settings for more than one queue
+    $transactionalQueue = $this->queueOptions['name'];
+    $userRegistrationQueue = 'userRegistrationQueue';
 
     // Confirm config.inc values set
     if (!$exchangeName) {
