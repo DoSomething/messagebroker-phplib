@@ -211,6 +211,11 @@ class MessageBroker
     // Exchange
     $channel = $this->setupExchange($this->exchangeOptions['name'], $this->exchangeOptions['type'], $channel);
 
+    foreach($queues as $queueNum => $queueDetails) {
+      $channel = $this->setupQueue($queueDetails['name'], $channel);
+      $channel->queue_bind($queueDetails['name'], $exchangeName, $queueDetails['pattern']);
+    }
+
     // Queues
     $channel = $this->setupQueue($this->queueOptions['transactional']['name'], $channel, NULL);
     $channel = $this->setupQueue($this->queueOptions['registrations']['name'], $channel, NULL);
