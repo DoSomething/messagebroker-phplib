@@ -93,13 +93,17 @@ class MessageBroker
       'auto_delete' => isset($config['exchange']['auto_delete']) ? $config['exchange']['auto_delete'] : FALSE,
     );
 
-    $this->queueOptions = array(
-      'name' => isset($config['queue']['name']) ? $config['queue']['name'] : '',
-      'passive' => isset($config['queue']['passive']) ? $config['queue']['passive'] : '',
-      'durable' => isset($config['queue']['durable']) ? $config['queue']['durable'] : '',
-      'exclusive' => isset($config['queue']['exclusive']) ? $config['queue']['exclusive'] : '',
-      'auto_delete' => isset($config['queue']['auto_delete']) ? $config['queue']['auto_delete'] : '',
-    );
+    // Create as many queues as defined in $config
+    foreach($config['queue'] as $queueType => $queueDetails) {
+      $queueOptions[$queueType] = array(
+        'name' => $queueDetails['name'],
+        'passive' => $queueDetails['passive'],
+        'durable' => $queueDetails['durable'],
+        'exclusive' => $queueDetails['exclusive'],
+        'auto_delete' => $queueDetails['auto_delete'],
+      );
+    }
+    $this->queueOptions = $queueOptions;
 
     // Set config vars for use in methods
 
@@ -200,33 +204,23 @@ class MessageBroker
    */
   public function produceTransactional($data) {
 
-    $exchangeName = $this->exchangeOptions['name'];
-    // @todo: Support settings for more than one queue
-    $transactionalQueue = $this->queueOptions['name'];
-    $userRegistrationQueue = 'userRegistrationQueue';
-
-    // Confirm config.inc values set
-    if (!$exchangeName) {
-      throw new Exception('config.inc settings missing, exchange and/or
-        queue name not set. If this is on a Drupal website check the settings
-        at admin/config/services/message-broker-producer/mq-settings');
-    }
-
     // Collect RabbitMQ connection details
     $connection = $this->connection;
     $channel = $connection->channel();
 
     // Exchange
-    $channel = $this->setupExchange($exchangeName, 'topic', $channel);
+    $channel = $this->setupExchange($this->exchangeOptions['name'], $this->exchangeOptions['type'], $channel);
 
     // Queues
-    $channel = $this->setupQueue($transactionalQueue, $channel, NULL);
-    $channel = $this->setupQueue($userRegistrationQueue, $channel, NULL);
+    $channel = $this->setupQueue($this->queueOptions['transactional']['name'], $channel, NULL);
+    $channel = $this->setupQueue($this->queueOptions['registrations']['name'], $channel, NULL);
+    $channel = $this->setupQueue($this->queueOptions['campaign_signups']['name'], $channel, NULL);
 
     // Bind exchange to queue for 'transactional' key
     // queue_bind($queue, $exchange, $routing_key="", $nowait=false, $arguments=null, $ticket=null)
-    $channel->queue_bind($transactionalQueue, $exchangeName, '*.*.transactional');
-    $channel->queue_bind($userRegistrationQueue, $exchangeName, 'user.registration.*');
+    $channel->queue_bind($this->queueOptions['transactional']['name'], $this->exchangeOptions['name'], $this->routingKey['transactional']);
+    $channel->queue_bind($this->queueOptions['registrations']['name'], $this->exchangeOptions['name'], $this->routingKey['registrations']);
+    $channel->queue_bind($this->queueOptions['campaign_signups']['name'], $this->exchangeOptions['name'], $this->routingKey['campaign_signups']);
 
     // Mark messages as persistent by setting the delivery_mode = 2 message property
     // Supported message properties: https://github.com/videlalvaro/php-amqplib/blob/master/doc/AMQPMessage.md
@@ -258,7 +252,7 @@ class MessageBroker
     }
 
     // basic_publish($msg, $exchange="", $routing_key="", $mandatory=false, $immediate=false, $ticket=null)
-    $channel->basic_publish($payload, $exchangeName, $routingKeys);
+    $channel->basic_publish($payload, $this->exchangeOptions['name'], $routingKeys);
 
     $channel->close();
     $connection->close();
@@ -339,11 +333,28 @@ class MessageBroker
      * set, the queue is deleted when all consumers have finished using it.
      */
 
-    $channel->queue_declare($queueName,
-      $this->queueOptions['passive'],
-      $this->queueOptions['durable'],
-      $this->queueOptions['exclusive'],
-      $this->queueOptions['auto_delete']);
+    // HACK - use queue specific settings or default to old, single queue setup
+    if ($queueName == $this->queueOptions['registrations']['name']) {
+      $channel->queue_declare($queueName,
+        $this->queueOptions['registrations']['passive'],
+        $this->queueOptions['registrations']['durable'],
+        $this->queueOptions['registrations']['exclusive'],
+        $this->queueOptions['registrations']['auto_delete']);
+    }
+    elseif ($queueName == $this->queueOptions['campaign_signups']['name']) {
+      $channel->queue_declare($queueName,
+        $this->queueOptions['campaign_signups']['passive'],
+        $this->queueOptions['campaign_signups']['durable'],
+        $this->queueOptions['campaign_signups']['exclusive'],
+        $this->queueOptions['campaign_signups']['auto_delete']);
+    }
+    else {
+      $channel->queue_declare($queueName,
+        $this->queueOptions['passive'],
+        $this->queueOptions['durable'],
+        $this->queueOptions['exclusive'],
+        $this->queueOptions['auto_delete']);
+    }
 
     return $channel;
   }
