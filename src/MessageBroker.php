@@ -202,8 +202,32 @@ class MessageBroker
 
     $exchangeName = $this->exchangeOptions['name'];
     // @todo: Support settings for more than one queue
+    // This is the start of the multi queue support
+    $queues = array(
+      0 => array(
+          'name' => $this->queueOptions['name'],
+ //         'pattern' => getenv("MB_TRANSACTIONAL_QUEUE_TOPIC_MB_TRANSACTIONAL_EXCHANGE_PATTERN"),
+          'pattern' => '*.*.transactional',
+        ),
+      1 => array(
+ //         'name' => getenv("MB_USER_REGISTRATION_QUEUE"),
+          'name' => 'userRegistrationQueue',
+ //         'pattern' => getenv("MB_USER_REGISTRATION_QUEUE_TOPIC_MB_TRANSACTIONAL_EXCHANGE_PATTERN"),
+          'pattern' => 'user.registration.*',
+        ),
+      2 => array(
+ //         'name' => getenv("MB_MAILCHIMP_CAMPAIGN_SIGNUP_QUEUE"),
+          'name' => 'mailchimpCampaignSignupQueue',
+ //         'pattern' => getenv("MB_MAILCHIMP_CAMPAIGN_SIGNUP_QUEUE_TOPIC_MB_TRANSACTIONAL_EXCHANGE_PATTERN"),
+          'pattern' => 'campaign.signup.*',
+        ),
+    );
+
+    /*
     $transactionalQueue = $this->queueOptions['name'];
     $userRegistrationQueue = 'userRegistrationQueue';
+    $mailChimpCampaignQueue = 'mailChimpCampaignQueue';
+    */
 
     // Confirm config.inc values set
     if (!$exchangeName) {
@@ -219,14 +243,23 @@ class MessageBroker
     // Exchange
     $channel = $this->setupExchange($exchangeName, 'topic', $channel);
 
+    foreach($queues as $queueNum => $queueDetails) {
+      $channel = $this->setupQueue($queueDetails['name'], $channel);
+      $channel->queue_bind($queueDetails['name'], $exchangeName, $queueDetails['pattern']);
+    }
+
+/*
     // Queues
     $channel = $this->setupQueue($transactionalQueue, $channel, NULL);
     $channel = $this->setupQueue($userRegistrationQueue, $channel, NULL);
+    $channel = $this->setupQueue($mailChimpCampaignQueue, $channel, NULL);
 
     // Bind exchange to queue for 'transactional' key
     // queue_bind($queue, $exchange, $routing_key="", $nowait=false, $arguments=null, $ticket=null)
     $channel->queue_bind($transactionalQueue, $exchangeName, '*.*.transactional');
     $channel->queue_bind($userRegistrationQueue, $exchangeName, 'user.registration.*');
+    $channel->queue_bind($mailChimpCampaignQueue, $exchangeName, 'campaign.signup.*');
+*/
 
     // Mark messages as persistent by setting the delivery_mode = 2 message property
     // Supported message properties: https://github.com/videlalvaro/php-amqplib/blob/master/doc/AMQPMessage.md
