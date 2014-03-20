@@ -334,19 +334,29 @@ class MessageBroker
      */
 
     // HACK - use queue specific settings or default to old, single queue setup
-    if ($queueName == $this->queueOptions['registrations']['name']) {
+    if (isset($this->queueOptions['registrations']['name']) &&
+        $queueName == $this->queueOptions['registrations']['name']) {
       $channel->queue_declare($queueName,
         $this->queueOptions['registrations']['passive'],
         $this->queueOptions['registrations']['durable'],
         $this->queueOptions['registrations']['exclusive'],
         $this->queueOptions['registrations']['auto_delete']);
     }
-    elseif ($queueName == $this->queueOptions['campaign_signups']['name']) {
+    elseif (isset($this->queueOptions['campaign_signups']['name']) &&
+            $queueName == $this->queueOptions['campaign_signups']['name']) {
       $channel->queue_declare($queueName,
         $this->queueOptions['campaign_signups']['passive'],
         $this->queueOptions['campaign_signups']['durable'],
         $this->queueOptions['campaign_signups']['exclusive'],
         $this->queueOptions['campaign_signups']['auto_delete']);
+    }
+    elseif (isset($this->queueOptions['transactional']['name']) &&
+            $queueName == $this->queueOptions['transactional']['name']) {
+      $channel->queue_declare($queueName,
+        $this->queueOptions['transactional']['passive'],
+        $this->queueOptions['transactional']['durable'],
+        $this->queueOptions['transactional']['exclusive'],
+        $this->queueOptions['transactional']['auto_delete']);
     }
     else {
       $channel->queue_declare($queueName,
