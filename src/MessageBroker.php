@@ -339,7 +339,7 @@ class MessageBroker
      *   When a queue is already setup a queue_declare() will return details
      *   about the exsisting queue.
      *     status[1] - message count
-     *     status[2] - unacknoledged count
+     *     status[2] - unacknowledged count
      */
     foreach ($this->queueOptions as $queue => $queueOptions) {
       if ($queueOptions['name'] == $queueName) {
