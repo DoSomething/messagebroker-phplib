@@ -344,10 +344,10 @@ class MessageBroker
     foreach ($this->queueOptions as $queue => $queueOptions) {
       if ($queueOptions['name'] == $queueName) {
         $status = $channel->queue_declare($queueName,
-          $this->queueOptions[$queue]['passive'],
-          $this->queueOptions[$queue]['durable'],
-          $this->queueOptions[$queue]['exclusive'],
-          $this->queueOptions[$queue]['auto_delete']);
+          $queueOptions[$queue]['passive'],
+          $queueOptions[$queue]['durable'],
+          $queueOptions[$queue]['exclusive'],
+          $queueOptions[$queue]['auto_delete']);
         return array($channel, $status);
       }
     }
