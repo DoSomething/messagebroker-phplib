@@ -212,9 +212,9 @@ class MessageBroker
     $channel = $this->setupExchange($this->exchangeOptions['name'], $this->exchangeOptions['type'], $channel);
 
     // Queues
-    $channel = $this->setupQueue($this->queueOptions['transactional']['name'], $channel, NULL);
-    $channel = $this->setupQueue($this->queueOptions['registrations']['name'], $channel, NULL);
-    $channel = $this->setupQueue($this->queueOptions['campaign_signups']['name'], $channel, NULL);
+    list($channel, ) = $this->setupQueue($this->queueOptions['transactional']['name'], $channel);
+    list($channel, ) = $this->setupQueue($this->queueOptions['registrations']['name'], $channel);
+    list($channel, ) = $this->setupQueue($this->queueOptions['campaign_signups']['name'], $channel);
 
     // Bind exchange to queue for 'transactional' key
     // queue_bind($queue, $exchange, $routing_key="", $nowait=false, $arguments=null, $ticket=null)
@@ -331,42 +331,29 @@ class MessageBroker
      *
      * auto_delete: The queue won't be deleted once the channel is closed. If
      * set, the queue is deleted when all consumers have finished using it.
+     *
+     * @return object $channel
+     *   The updated channel object with the new queue.
+     *
+     * @return array $status
+     *   When a queue is already setup a queue_declare() will return details
+     *   about the exsisting queue.
+     *     status[1] - message count
+     *     status[2] - unacknoledged count
      */
-
-    // HACK - use queue specific settings or default to old, single queue setup
-    if (isset($this->queueOptions['registrations']['name']) &&
-        $queueName == $this->queueOptions['registrations']['name']) {
-      $channel->queue_declare($queueName,
-        $this->queueOptions['registrations']['passive'],
-        $this->queueOptions['registrations']['durable'],
-        $this->queueOptions['registrations']['exclusive'],
-        $this->queueOptions['registrations']['auto_delete']);
-    }
-    elseif (isset($this->queueOptions['campaign_signups']['name']) &&
-            $queueName == $this->queueOptions['campaign_signups']['name']) {
-      $channel->queue_declare($queueName,
-        $this->queueOptions['campaign_signups']['passive'],
-        $this->queueOptions['campaign_signups']['durable'],
-        $this->queueOptions['campaign_signups']['exclusive'],
-        $this->queueOptions['campaign_signups']['auto_delete']);
-    }
-    elseif (isset($this->queueOptions['transactional']['name']) &&
-            $queueName == $this->queueOptions['transactional']['name']) {
-      $channel->queue_declare($queueName,
-        $this->queueOptions['transactional']['passive'],
-        $this->queueOptions['transactional']['durable'],
-        $this->queueOptions['transactional']['exclusive'],
-        $this->queueOptions['transactional']['auto_delete']);
-    }
-    else {
-      $channel->queue_declare($queueName,
-        $this->queueOptions['passive'],
-        $this->queueOptions['durable'],
-        $this->queueOptions['exclusive'],
-        $this->queueOptions['auto_delete']);
+    foreach ($this->queueOptions as $queue => $queueOptions) {
+      if ($queueOptions['name'] == $queueName) {
+        $status = $channel->queue_declare($queueName,
+          $this->queueOptions[$queue]['passive'],
+          $this->queueOptions[$queue]['durable'],
+          $this->queueOptions[$queue]['exclusive'],
+          $this->queueOptions[$queue]['auto_delete']);
+        return array($channel, $status);
+      }
     }
 
-    return $channel;
+    // Error as queue has not been setup
+   trigger_error($queueName . ' options not found in $this->queueOptions.', E_USER_WARNING);
   }
 
 }
