@@ -101,6 +101,7 @@ class MessageBroker
         'durable' => $queueDetails['durable'],
         'exclusive' => $queueDetails['exclusive'],
         'auto_delete' => $queueDetails['auto_delete'],
+        'routingKey' => isset($queueDetails['routingKey']) ? $queueDetails['routingKey'] : '',
       );
     }
     $this->queueOptions = $queueOptions;
@@ -341,13 +342,13 @@ class MessageBroker
      *     status[1] - message count
      *     status[2] - unacknowledged count
      */
-    foreach ($this->queueOptions as $queue => $queueOptions) {
-      if ($queueOptions['name'] == $queueName) {
+    foreach ($this->queueOptions as $queue => $queueOption) {
+      if ($queueOption['name'] == $queueName) {
         $status = $channel->queue_declare($queueName,
-          $queueOptions[$queue]['passive'],
-          $queueOptions[$queue]['durable'],
-          $queueOptions[$queue]['exclusive'],
-          $queueOptions[$queue]['auto_delete']);
+          $queueOption['passive'],
+          $queueOption['durable'],
+          $queueOption['exclusive'],
+          $queueOption['auto_delete']);
         return array($channel, $status);
       }
     }
