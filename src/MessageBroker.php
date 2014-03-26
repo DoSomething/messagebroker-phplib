@@ -203,69 +203,6 @@ class MessageBroker
   }
 
   /**
-   * produceTransactional - called to trigger production of a transactional
-   * entry in an exchange / queue.
-   *
-   * @param array $data
-   *  Message data to be passed through broker
-   */
-  public function produceTransactional($data) {
-
-    // Collect RabbitMQ connection details
-    $connection = $this->connection;
-    $channel = $connection->channel();
-
-    // Exchange
-    $channel = $this->setupExchange($this->exchangeOptions['name'], $this->exchangeOptions['type'], $channel);
-
-    // Queues
-    list($channel, ) = $this->setupQueue($this->queueOptions['transactional']['name'], $channel);
-    list($channel, ) = $this->setupQueue($this->queueOptions['registrations']['name'], $channel);
-    list($channel, ) = $this->setupQueue($this->queueOptions['campaign_signups']['name'], $channel);
-
-    // Bind exchange to queue for 'transactional' key
-    // queue_bind($queue, $exchange, $routing_key="", $nowait=false, $arguments=null, $ticket=null)
-    $channel->queue_bind($this->queueOptions['transactional']['name'], $this->exchangeOptions['name'], $this->routingKey['transactional']);
-    $channel->queue_bind($this->queueOptions['registrations']['name'], $this->exchangeOptions['name'], $this->routingKey['registrations']);
-    $channel->queue_bind($this->queueOptions['campaign_signups']['name'], $this->exchangeOptions['name'], $this->routingKey['campaign_signups']);
-
-    // Mark messages as persistent by setting the delivery_mode = 2 message property
-    // Supported message properties: https://github.com/videlalvaro/php-amqplib/blob/master/doc/AMQPMessage.md
-    $payload = new AMQPMessage($data, array('delivery_mode' => 2));
-
-    // Routing
-    $payload_values = json_decode($data);
-    switch ($payload_values->activity) {
-      case 'campaign_signup':
-      case 'campaign-signup':
-        $routingKeys = 'campaign.signup.transactional';
-        break;
-      case 'campaign_reportback':
-      case 'campaign-reportback':
-        $routingKeys = 'campaign.campaign_reportback.transactional';
-        break;
-      case 'user_password':
-      case 'user-password':
-        $routingKeys = 'user.password_reset.transactional';
-        break;
-      case 'user_register':
-      case 'user-register':
-        $routingKeys = 'user.registration.transactional';
-        break;
-
-      default:
-        throw new Exception('Undefined activity "' . $payload_values->activity .
-          '" sent to produceTransactional in messagebroker-phplib.');
-    }
-
-    // basic_publish($msg, $exchange="", $routing_key="", $mandatory=false, $immediate=false, $ticket=null)
-    $channel->basic_publish($payload, $this->exchangeOptions['name'], $routingKeys);
-
-    $channel->close();
-    $connection->close();
-  }
-
-  /**
    * setupExchange - common create exchange functionality used to ensure exchange
    * settings are the same for both producers and consumers. A producer will
    * never communicate with a queue directly, it's always through an exchange.
