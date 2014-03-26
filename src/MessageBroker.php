@@ -9,7 +9,7 @@ use PhpAmqpLib\Message\AMQPMessage;
 
 class MessageBroker
 {
-  
+
   /**
    * AMQPConnection
    */
@@ -101,7 +101,7 @@ class MessageBroker
         'durable' => $queueDetails['durable'],
         'exclusive' => $queueDetails['exclusive'],
         'auto_delete' => $queueDetails['auto_delete'],
-        'routingKey' => isset($queueDetails['routingKey']) ? $queueDetails['routingKey'] : '',
+        'bindingKey' => isset($queueDetails['bindingKey']) ? $queueDetails['bindingKey'] : '',
       );
     }
     $this->queueOptions = $queueOptions;
@@ -138,13 +138,16 @@ class MessageBroker
   public function publishMessage($payload) {
     $channel = $this->connection->channel();
 
-    // Queue and exchange setup
-    $this->setupQueue($this->queueOptions['name'], $channel);
+    // Exchange setup
     $this->setupExchange($this->exchangeOptions['name'], $this->exchangeOptions['type'], $channel);
 
-    // Bind the queue to the exchange
-    // @todo: Support for more than one queue and the related biding
-    $channel->queue_bind($this->queueOptions['name'], $this->exchangeOptions['name'], $this->routingKey);
+    foreach ($this->queueOptions as $queueOption) {
+      // Queue setup
+      list($channel, ) = $this->setupQueue($queueOption['name'], $channel);
+
+      // Bind the queue to the exchange
+      $channel->queue_bind($queueOption['name'], $this->exchangeOptions['name'], $queueOption['bindingKey']);
+    }
 
     // @todo: 'delivery_mode' needs to be a setting as not all messages will require acknowledgement
     $messageProperties = array(
@@ -166,13 +169,16 @@ class MessageBroker
   public function consumeMessage($callback) {
     $channel = $this->connection->channel();
 
-    // Queue and exchange setup
-    $this->setupQueue($this->queueOptions['name'], $channel);
+    // Exchange setup
     $this->setupExchange($this->exchangeOptions['name'], $this->exchangeOptions['type'], $channel);
 
-    // Bind the queue to the exchange
-    // @todo: Look into routingKey
-    $channel->queue_bind($this->queueOptions['name'], $this->exchangeOptions['name'], $this->routingKey);
+    foreach ($this->queueOptions as $queueOption) {
+      // Queue setup
+      list($channel, ) = $this->setupQueue($queueOption['name'], $channel);
+
+      // Bind the queue to the exchange
+      $channel->queue_bind($queueOption['name'], $this->exchangeOptions['name'], $queueOption['bindingKey']);
+    }
 
     // Start the consumer
     $channel->basic_consume(
