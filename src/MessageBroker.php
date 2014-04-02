@@ -34,7 +34,7 @@ class MessageBroker
    *
    * @var array
    */
-  public $queueOptions;
+  private $queueOptions;
 
   /**
    * Routing key for routing messages between exchanges and queues.
