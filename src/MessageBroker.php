@@ -34,7 +34,7 @@ class MessageBroker
    *
    * @var array
    */
-  private $queueOptions;
+  public $queueOptions;
 
   /**
    * Routing key for routing messages between exchanges and queues.
@@ -130,6 +130,19 @@ class MessageBroker
   }
 
   /**
+   * Destructor
+   *
+   * Clean up connections.
+   */
+  public function __destruct() {
+
+    // Clean up connections
+    $channel = $this->connection->channel();
+    $channel->close();
+    $this->connection->close();
+  }
+
+  /**
    * Publish a message to the message broker.
    *
    * @param string $payload
@@ -197,9 +210,6 @@ class MessageBroker
       $channel->wait();
     }
 
-    // Clean up
-    $channel->close();
-    $this->connection->close();
   }
 
   /**
