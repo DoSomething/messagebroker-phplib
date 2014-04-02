@@ -136,9 +136,6 @@ class MessageBroker
    */
   public function __destruct() {
 
-    // Clean up connections
-    $channel = $this->connection->channel();
-    $channel->close();
     $this->connection->close();
   }
 
@@ -170,7 +167,6 @@ class MessageBroker
     $channel->basic_publish($message, $this->exchangeOptions['name'], $this->routingKey);
 
     $channel->close();
-    $this->connection->close();
   }
 
   /**
@@ -210,6 +206,7 @@ class MessageBroker
       $channel->wait();
     }
 
+    $channel->close();
   }
 
   /**
