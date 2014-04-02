@@ -130,6 +130,16 @@ class MessageBroker
   }
 
   /**
+   * Destructor
+   *
+   * Clean up connections.
+   */
+  public function __destruct() {
+
+    $this->connection->close();
+  }
+
+  /**
    * Publish a message to the message broker.
    *
    * @param string $payload
@@ -157,7 +167,6 @@ class MessageBroker
     $channel->basic_publish($message, $this->exchangeOptions['name'], $this->routingKey);
 
     $channel->close();
-    $this->connection->close();
   }
 
   /**
@@ -197,9 +206,7 @@ class MessageBroker
       $channel->wait();
     }
 
-    // Clean up
     $channel->close();
-    $this->connection->close();
   }
 
   /**
