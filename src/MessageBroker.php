@@ -187,18 +187,18 @@ class MessageBroker
 
       // Bind the queue to the exchange
       $channel->queue_bind($queueOption['name'], $this->exchangeOptions['name'], $queueOption['bindingKey']);
-    }
 
-    // Start the consumer
-    $channel->basic_consume(
-      $this->queueOptions['name'],
-      $this->consumeOptions['consumer_tag'],
-      $this->consumeOptions['no_local'],
-      $this->consumeOptions['no_ack'],
-      $this->consumeOptions['exclusive'],
-      $this->consumeOptions['nowait'],
-      $callback
-    );
+      // Start the consumer
+      $channel->basic_consume(
+        $queueOption['name'],
+        $this->consumeOptions['consumer_tag'],
+        $this->consumeOptions['no_local'],
+        $this->consumeOptions['no_ack'],
+        $this->consumeOptions['exclusive'],
+        $this->consumeOptions['nowait'],
+        $callback
+      );
+    }
 
     // Wait for messages on the channel
     echo ' [*] Waiting for Unsubscribe messages. To exit press CTRL+C', "\n";
