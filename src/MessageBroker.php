@@ -216,7 +216,7 @@ class MessageBroker
    * @param $payload
    *   The payload received in the consume callback.
    */
-  public function sendAck($payload) {
+  public static function sendAck($payload) {
     $payload->delivery_info['channel']->basic_ack($payload->delivery_info['delivery_tag']);
   }
 
