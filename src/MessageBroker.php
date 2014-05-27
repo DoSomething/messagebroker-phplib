@@ -1,6 +1,12 @@
 <?php
 /*
- * Message Broker class library
+ * Message Broker class library to be used by producer and consumer applications
+ * by including:
+ * 
+ *  "require": {
+ *    "DoSomething/messagebroker-phplib": "0.1.*",
+ *
+ * in composer.json.
  */
 
 // Use AMQP
@@ -41,7 +47,7 @@ class MessageBroker
    *
    * @var string
    */
-  private $routingKey;
+  public $routingKey;
 
   /**
    * Constructor
