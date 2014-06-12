@@ -144,8 +144,12 @@ class MessageBroker
    *
    * @param string $payload
    *  Data to wrap in the message.
+   *
+   * @param int $deliveryMode
+   *  1: non-persistent, faster but no logging to disk, ~ 3x
+   *  2: persistent, write a log to disk
    */
-  public function publishMessage($payload) {
+  public function publishMessage($payload, $deliveryMode = 2) {
     $channel = $this->connection->channel();
 
     // Exchange setup
@@ -161,7 +165,7 @@ class MessageBroker
 
     // @todo: 'delivery_mode' needs to be a setting as not all messages will require acknowledgement
     $messageProperties = array(
-      'delivery_mode' => 2,
+      'delivery_mode' => $deliveryMode,
     );
     $message = new AMQPMessage($payload, $messageProperties);
     $channel->basic_publish($message, $this->exchangeOptions['name'], $this->routingKey);
