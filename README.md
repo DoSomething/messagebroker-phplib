@@ -1,3 +1,5 @@
+[![Latest Stable Version](https://poser.pugx.org/dosomething/messagebroker-phplib/v/stable.svg)](https://packagist.org/packages/dosomething/messagebroker-phplib) [![Total Downloads](https://poser.pugx.org/dosomething/messagebroker-phplib/downloads.svg)](https://packagist.org/packages/dosomething/messagebroker-phplib) [![Latest Unstable Version](https://poser.pugx.org/dosomething/messagebroker-phplib/v/unstable.svg)](https://packagist.org/packages/dosomething/messagebroker-phplib) [![License](https://poser.pugx.org/dosomething/messagebroker-phplib/license.svg)](https://packagist.org/packages/dosomething/messagebroker-phplib)
+
 messagebroker-phplib
 ====================
 
