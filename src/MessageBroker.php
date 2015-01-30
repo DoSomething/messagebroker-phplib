@@ -149,7 +149,7 @@ class MessageBroker
    *  1: non-persistent, faster but no logging to disk, ~ 3x
    *  2: persistent, write a copy of the message to disk
    *
-   * The related exchange must also be set to durable for the setting
+   * The related queue must also be set to durable for the setting
    * to work. If the server crashes, persistent messages will be recovered.
    * Crash tolerance at a price.
    */
