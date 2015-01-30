@@ -111,7 +111,7 @@ class MessageBroker
     // Routing Key is the routing value for topic exchanges, example:
     // '*.*.transactional'
     // $channel->queue_bind($transactionalQueue, $exchangeName, '*.*.transactional');
-    // This value may not be relivant for non "topic" exchanges??
+    // This value may not be relevant for non "topic" exchanges??
 
     // There might be some confusion between using this setting for queue_bind
     // and basic_publish.
@@ -147,7 +147,11 @@ class MessageBroker
    *
    * @param int $deliveryMode
    *  1: non-persistent, faster but no logging to disk, ~ 3x
-   *  2: persistent, write a log to disk
+   *  2: persistent, write a copy of the message to disk
+   *
+   * The related exchange must also be set to durable for the setting
+   * to work. If the server crashes, persistent messages will be recovered.
+   * Crash tolerance at a price.
    */
   public function publishMessage($payload, $deliveryMode = 2) {
     $channel = $this->connection->channel();
@@ -268,7 +272,7 @@ class MessageBroker
 
   /**
    * getQueue - common create queue functionality used to ensure queue settings
-   * are the same for both producers and consumers. If the queue already exsists
+   * are the same for both producers and consumers. If the queue already exists
    * the details of the queue will be return.
    *
    * @param string $queueName
@@ -293,7 +297,7 @@ class MessageBroker
      * must also be marked as durable in order for messages in a durable queue
      * to survive a queue restart.
      *
-     * exclusive: Yhe queue can be accessed in other channels
+     * exclusive: The queue can be accessed in other channels
      *
      * auto_delete: The queue won't be deleted once the channel is closed. If
      * set, the queue is deleted when all consumers have finished using it.
@@ -303,7 +307,7 @@ class MessageBroker
      *
      * @return array $status
      *   When a queue is already setup a queue_declare() will return details
-     *   about the exsisting queue.
+     *   about the existing queue.
      *     status[1] - message count
      *     status[2] - unacknowledged count
      */
