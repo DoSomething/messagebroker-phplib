@@ -209,7 +209,7 @@ class MessageBroker
     }
 
     // Wait for messages on the channel
-    echo ' [*] Waiting for Unsubscribe messages. To exit press CTRL+C', "\n";
+    echo ' [*] Waiting for messages. To exit press CTRL+C', "\n";
     while (count($channel->callbacks)) {
       $channel->wait();
     }
