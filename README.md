@@ -9,7 +9,3 @@ A library of functionality shared between the components that make up the DoSome
 - Message Broker Consumer (message-broker-consumer): https://github.com/DoSomething/message-broker
 
 The PHP library (messagebroker-phplib) is an object wrapper for RabbitMQ functionality. Configuration and connection methods common to the system are shared with the components.
-
-
-[![Bitdeli Badge](https://d2weczhvl823v0.cloudfront.net/DoSomething/messagebroker-phplib/trend.png)](https://bitdeli.com/free "Bitdeli Badge")
-
