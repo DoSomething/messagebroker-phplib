@@ -209,7 +209,7 @@ class MessageBroker
     }
 
     // Wait for messages on the channel
-    echo ' [*] Waiting for messages. To exit press CTRL+C', "\n";
+    echo ' [*] Waiting for messages = ' . date('D M j G:i:s T Y') . '. To exit press CTRL+C', PHP_EOL;
     while (count($channel->callbacks)) {
       $channel->wait();
     }
