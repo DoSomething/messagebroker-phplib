@@ -1,7 +1,7 @@
 {
     "name": "dosomething/messagebroker-phplib",
     "type": "library",
-    "version": "0.1.18",
+    "version": "0.1.19",
     "description": "A library of functionality shared between the components that make up the DoSomething.org Message Broker system.",
     "keywords": ["rabbitmq", "message broker php library"],
     "homepage": "https://github.com/DoSomething/messagebroker-phplib",
