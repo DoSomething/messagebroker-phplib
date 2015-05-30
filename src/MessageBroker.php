@@ -3,8 +3,6 @@
  * Message Broker class library
  */
 
-namespace DoSomething\MessageBroker;
-
 // Use AMQP
 use PhpAmqpLib\Connection\AMQPConnection;
 use PhpAmqpLib\Message\AMQPMessage;
