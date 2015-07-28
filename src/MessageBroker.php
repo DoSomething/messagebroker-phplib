@@ -186,9 +186,9 @@ class MessageBroker
   }
 
   /**
-   * publishMessage - DEPRECIATED
+   * publishMessage - DEPRECIATED, replaced by publish()
    *
-   * Replaced by publish()
+   * @deprecated deprecated since version 0.2.2
    */
   public function publishMessage($payload, $deliveryMode = 1, $routingKey) {
     return publish($payload, $routingKey, $deliveryMode = 1);
