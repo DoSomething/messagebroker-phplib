@@ -143,10 +143,14 @@ class MessageBroker
   }
 
   /**
-   * Publish a message to the message broker.
+   * Publish a message to the message broker system.
    *
    * @param string $payload
    *  Data to wrap in the message.
+   * @param string $routingKey
+   *  The key or pattern the message will use for submission to the exchange for distribution to the
+   *  attached queues. Depending on the exchange type the key defines what queues get a copy of
+   *  the message.
    * @param int $deliveryMode
    *  1: non-persistent, faster but no logging to disk, ~ 3x
    *  2: persistent, write a copy of the message to disk
@@ -154,12 +158,8 @@ class MessageBroker
    * The related queue must also be set to durable for the setting
    * to work. If the server crashes, persistent messages will be recovered.
    * Crash tolerance comes at a price.
-   * @param string $routingKey
-   *  The key or pattern the message will use for submission to the exchange for distribution to the
-   *  attached queues. Depending on the exchange type the key defines what queues get a copy of
-   *  the message.
    */
-  public function publishMessage($payload, $deliveryMode = 1, $routingKey) {
+  public function publish($payload, $routingKey, $deliveryMode = 1) {
     $channel = $this->connection->channel();
 
     // Exchange setup
@@ -183,6 +183,15 @@ class MessageBroker
     $channel->basic_publish($message, $this->exchangeOptions['name'], $routingKey);
 
     $channel->close();
+  }
+
+  /**
+   * publishMessage - DEPRECIATED
+   *
+   * Replaced by publish()
+   */
+  public function publishMessage($payload, $deliveryMode = 1, $routingKey) {
+    return publish($payload, $routingKey, $deliveryMode = 1);
   }
 
   /**
