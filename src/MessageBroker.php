@@ -147,16 +147,19 @@ class MessageBroker
    *
    * @param string $payload
    *  Data to wrap in the message.
-   *
    * @param int $deliveryMode
    *  1: non-persistent, faster but no logging to disk, ~ 3x
    *  2: persistent, write a copy of the message to disk
    *
    * The related queue must also be set to durable for the setting
    * to work. If the server crashes, persistent messages will be recovered.
-   * Crash tolerance at a price.
+   * Crash tolerance comes at a price.
+   * @param string $routingKey
+   *  The key or pattern the message will use for submission to the exchange for distribution to the
+   *  attached queues. Depending on the exchange type the key defines what queues get a copy of
+   *  the message.
    */
-  public function publishMessage($payload, $deliveryMode = 1) {
+  public function publishMessage($payload, $deliveryMode = 1, $routingKey) {
     $channel = $this->connection->channel();
 
     // Exchange setup
@@ -170,12 +173,14 @@ class MessageBroker
       $channel->queue_bind($queueOption['name'], $this->exchangeOptions['name'], $queueOption['bindingKey']);
     }
 
-    // @todo: 'delivery_mode' needs to be a setting as not all messages will require acknowledgement
+    // Routing key value can be a parameter to publishMessage() or a setting in the settings array sent
+    // to the instantiation of the Message Broker object.
+    $routingKey = isset($routingKey) ? $routingKey : $this->routingKey;
     $messageProperties = array(
       'delivery_mode' => $deliveryMode,
     );
     $message = new AMQPMessage($payload, $messageProperties);
-    $channel->basic_publish($message, $this->exchangeOptions['name'], $this->routingKey);
+    $channel->basic_publish($message, $this->exchangeOptions['name'], $routingKey);
 
     $channel->close();
   }
