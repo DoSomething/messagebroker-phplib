@@ -191,7 +191,7 @@ class MessageBroker
    * @deprecated deprecated since version 0.2.2
    */
   public function publishMessage($payload, $deliveryMode = 1, $routingKey) {
-    return publish($payload, $routingKey, $deliveryMode = 1);
+    return $this->publish($payload, $routingKey, $deliveryMode = 1);
   }
 
   /**
