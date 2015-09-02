@@ -190,7 +190,7 @@ class MessageBroker
    *
    * @deprecated deprecated since version 0.2.2
    */
-  public function publishMessage($payload, $deliveryMode = 1, $routingKey = NULL) {
+  public function publishMessage($payload, $deliveryMode = 1, $routingKey) {
     return $this->publish($payload, $routingKey, $deliveryMode = 1);
   }
 
@@ -199,8 +199,10 @@ class MessageBroker
    *
    * @param $callback
    *  Callback to handle messages the consumer receives.
+   * @param integer $consumeAmount
+   *  The number of message to set as unacked and reserve when consumer is sent messages.
    */
-  public function consumeMessage($callback) {
+  public function consumeMessage($callback, $consumeAmount = NULL) {
     $channel = $this->connection->channel();
 
     // Exchange setup
@@ -212,6 +214,14 @@ class MessageBroker
 
       // Bind the queue to the exchange
       $channel->queue_bind($queueOption['name'], $this->exchangeOptions['name'], $queueOption['bindingKey']);
+
+      if (!$consumeAmount == NULL) {
+        // @todo: Investigate if large unack amounts result in multi consumers being able to process large queues.
+        // This currently set the unacked limit to a single message resulting in every consumer getting access to
+        // the next message in the queue.
+        // $channel->qos(NULL, $consumeAmount, NULL);
+        $channel->basic_qos(null, 1, null);
+      }
 
       // Start the consumer
       $channel->basic_consume(
