@@ -159,7 +159,7 @@ class MessageBroker
    * to work. If the server crashes, persistent messages will be recovered.
    * Crash tolerance comes at a price.
    */
-  public function publish($payload, $routingKey, $deliveryMode = 1) {
+  public function publish($payload, $routingKey = NULL, $deliveryMode = 1) {
     $channel = $this->connection->channel();
 
     // Exchange setup
@@ -190,7 +190,7 @@ class MessageBroker
    *
    * @deprecated deprecated since version 0.2.2
    */
-  public function publishMessage($payload, $deliveryMode = 1, $routingKey) {
+  public function publishMessage($payload, $deliveryMode = 1, $routingKey = NULL) {
     return $this->publish($payload, $routingKey, $deliveryMode = 1);
   }
 
