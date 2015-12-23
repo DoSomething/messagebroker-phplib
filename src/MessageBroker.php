@@ -256,6 +256,17 @@ class MessageBroker
   }
 
   /**
+   * Sends an non acknowledgement back to the message broker so the message can be
+   * returned to the queue.
+   *
+   * @param $payload
+   *   The payload received in the consume callback.
+   */
+  public static function sendNack($payload) {
+    $payload->delivery_info['channel']->basic_nack($payload->delivery_info['delivery_tag']);
+  }
+
+  /**
    * setupExchange - common create exchange functionality used to ensure exchange
    * settings are the same for both producers and consumers. A producer will
    * never communicate with a queue directly, it's always through an exchange.
