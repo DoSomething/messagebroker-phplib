@@ -76,6 +76,7 @@ class MessageBroker
         $credentials['username'],
         $credentials['password']);
     }
+    $this->channel = $this->connection->channel();
 
     $this->consumeOptions = array(
       'consumer_tag' => isset($config['consume']['consumer_tag']) ? $config['consume']['consumer_tag'] : '',
@@ -85,17 +86,20 @@ class MessageBroker
       'nowait' => isset($config['consume']['nowait']) ? $config['consume']['nowait'] : FALSE,
     );
 
-    $this->exchangeOptions = array(
-      'name' => isset($config['exchange']['name']) ? $config['exchange']['name'] : '',
-      'type' => isset($config['exchange']['type']) ? $config['exchange']['type'] : '',
-      'passive' => isset($config['exchange']['passive']) ? $config['exchange']['passive'] : FALSE,
-      'durable' => isset($config['exchange']['durable']) ? $config['exchange']['durable'] : FALSE,
-      'auto_delete' => isset($config['exchange']['auto_delete']) ? $config['exchange']['auto_delete'] : FALSE,
-    );
+    foreach ($config['exchange'] as $exchangeCount => $exchangeDetails) {
+      $exchangeOptions[$exchangeCount] = array(
+        'name' => $exchangeDetails['name'],
+        'type' => $exchangeDetails['type'],
+        'passive' => isset($exchangeDetails['passive']) ? $exchangeDetails['passive'] : FALSE,
+        'durable' => isset($exchangeDetails['durable']) ? $exchangeDetails['durable'] : FALSE,
+        'auto_delete' => isset($exchangeDetails['auto_delete']) ? $exchangeDetails['auto_delete'] : FALSE,
+      );
+    }
+    $this->exchangeOptions = $exchangeOptions;
 
     // Create as many queues as defined in $config
-    foreach($config['queue'] as $queueType => $queueDetails) {
-      $queueOptions[$queueType] = array(
+    foreach($config['queue'] as $queueCount => $queueDetails) {
+      $queueOptions[$queueCount] = array(
         'name' => $queueDetails['name'],
         'passive' => $queueDetails['passive'],
         'durable' => $queueDetails['durable'],
@@ -203,10 +207,10 @@ class MessageBroker
    *  The number of message to set as unacked and reserve when consumer is sent messages.
    */
   public function consumeMessage($callback, $consumeAmount = NULL) {
-    $channel = $this->connection->channel();
+    $channel = $this->channel();
 
     // Exchange setup
-    $this->setupExchange($this->exchangeOptions['name'], $this->exchangeOptions['type'], $channel);
+    $this->setupExchange($this->exchangeOptions[0]['name'], $this->exchangeOptions['type'], $channel);
 
     foreach ($this->queueOptions as $queueOption) {
       // Queue setup
@@ -251,7 +255,7 @@ class MessageBroker
    * @param $payload
    *   The payload received in the consume callback.
    */
-  public static function sendAck($payload) {
+  public function sendAck($payload) {
     $payload->delivery_info['channel']->basic_ack($payload->delivery_info['delivery_tag']);
   }
 
@@ -262,7 +266,7 @@ class MessageBroker
    * @param $payload
    *   The payload received in the consume callback.
    */
-  public static function sendNack($payload) {
+  public function sendNack($payload) {
     $payload->delivery_info['channel']->basic_nack($payload->delivery_info['delivery_tag']);
   }
 
@@ -362,6 +366,29 @@ class MessageBroker
 
     // Error as queue has not been setup
    trigger_error($queueName . ' options not found in $this->queueOptions.', E_USER_WARNING);
+  }
+  
+  /**
+   *
+   */
+  public function connections() {
+    
+        foreach ($this->exchangeOptions as $exchangeCount => $exchangeSettings) {
+      $channel->exchange_declare(
+        $exchangeSettings['name'],
+        $exchangeSettings['type'],
+        $exchangeSetting['passive'],
+        $exchangeSetting['durable'],
+        $exchangeSetting['auto_delete']
+      );
+    }
+  }
+  
+  /**
+   *
+   */
+  public function bindExchanges($sourceExchange, $bindingKey = NULL, $destinationExchange) {
+    $this->channel->exchange_bind($destinationExchange, $sourceExchange, $bindingKey);
   }
 
 }
