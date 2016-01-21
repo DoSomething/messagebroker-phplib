@@ -257,12 +257,18 @@ class MessageBroker
 
   /**
    * Sends an non acknowledgement back to the message broker so the message can be
-   * returned to the queue.
+   * rejected or returned to the queue.
+   *
+   * https://www.rabbitmq.com/nack.html
    *
    * @param $payload
    *   The payload received in the consume callback.
+   * @param $purge
+   *   Reject messages in bulk - all unacked messages up to the current message defined in $payload
+   * @param $requeue
+   *   Reject and requeue (to potentially allow other consumer to process)
    */
-  public function sendNack($payload) {
+  public function sendNack($payload, $purge = false, $requeue = true) {
     $payload->delivery_info['channel']->basic_nack($payload->delivery_info['delivery_tag']);
   }
 
