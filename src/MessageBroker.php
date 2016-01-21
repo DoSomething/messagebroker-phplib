@@ -269,7 +269,7 @@ class MessageBroker
    *   Reject and requeue (to potentially allow other consumer to process)
    */
   public function sendNack($payload, $purge = false, $requeue = true) {
-    $payload->delivery_info['channel']->basic_nack($payload->delivery_info['delivery_tag']);
+    $payload->delivery_info['channel']->basic_nack($payload->delivery_info['delivery_tag'], $purge, $requeue);
   }
 
   /**
