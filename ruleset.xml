@@ -8,8 +8,4 @@
         <message>No standard class Camel Caps - cool within Quicksilver apps</message>
         <severity>3</severity>
     </rule>
-    <rule ref="PSR1.Files.SideEffects.FoundWithSymbols">
-        <message>Interessting warning, not sure of value.</message>
-        <severity>3</severity>
-    </rule>
 </ruleset>

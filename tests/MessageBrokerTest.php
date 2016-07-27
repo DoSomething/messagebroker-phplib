@@ -7,8 +7,13 @@ namespace DoSomething\MessageBroker;
 
 use DoSomething\MB_Toolbox\MB_Configuration;
 
-
-class MessageBroker extends \PHPUnit_Framework_TestCase {
+/**
+ * Class MessageBroker
+ *
+ * @package DoSomething\MessageBroker
+ */
+class MessageBroker extends \PHPUnit_Framework_TestCase
+{
     
     /**
      * @var object MessageBroker.
