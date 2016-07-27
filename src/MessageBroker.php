@@ -1,6 +1,7 @@
 <?php
 /*
- * Message Broker class library
+ * Message Broker (Quicksilver) class library. Used as wrapper of php-amqplib to abstract some of the implimentation
+ * requiremenrts.
  */
 
 // Use AMQP
@@ -105,31 +106,6 @@ class MessageBroker
       );
     }
     $this->queueOptions = $queueOptions;
-
-    // Set config vars for use in methods
-
-    // Routing Key is the routing value for topic exchanges, example:
-    // '*.*.transactional'
-    // $channel->queue_bind($transactionalQueue, $exchangeName, '*.*.transactional');
-    // This value may not be relevant for non "topic" exchanges??
-
-    // There might be some confusion between using this setting for queue_bind
-    // and basic_publish. The confusion is between routingKey and bindingKey,
-    // topic vs direct exchanges.
-
-    // -> queue_bind routing keys define the combination of keys
-    // of messages that get routed to certain queues.
-    // -> basic_publish sets the keys assigned to a message
-
-    // An exchange with a routing key binding of *.*.transactional will get an
-    // entry for all messages sent with a routing key of:
-    // user.registration.transactional
-
-    // In the case of "direct" exchanges, the routing key must be a exact match
-    // with the routing key assigned to the message. This value can be blank but
-    // it must be the same for both the queue and message value.
-
-    $this->routingKey = isset($config['routingKey']) ? $config['routingKey'] : '';
   }
 
   /**
@@ -183,15 +159,6 @@ class MessageBroker
     $channel->basic_publish($message, $this->exchangeOptions['name'], $routingKey);
 
     $channel->close();
-  }
-
-  /**
-   * publishMessage - DEPRECIATED, replaced by publish()
-   *
-   * @deprecated deprecated since version 0.2.2
-   */
-  public function publishMessage($payload, $deliveryMode = 1, $routingKey = NULL) {
-    return $this->publish($payload, $routingKey, $deliveryMode = 1);
   }
 
   /**
@@ -287,24 +254,24 @@ class MessageBroker
    *  The channel connection that the queue should use.
    *
    * @return object $channel
+   *
+   * passive: The exchange will survive server restarts
+   *
+   * durable: The exchange won't be deleted once the channel is closed
+   *
+   * auto_delete: The exchange won't be deleted once the channel is closed.
+   *   The exchange will survive server restarts
+   *
+   * delete the exchange when something has bound to it and then
+   * everything has unbound from it", which again only really makes sense in
+   * the context of exchange to exchange bindings
+   * https://groups.google.com/forum/#!topic/rabbitmq-discuss/YcM_zElQcq8
+   *
+   * Debugging from  command line:
+   * $ rabbitmqctl list_exchanges
    */
   public function setupExchange($exchangeName, $exchangeType, $channel) {
 
-    /*
-     * passive: The exchange will survive server restarts
-     *
-     * durable: The exchange won't be deleted once the channel is closed
-     *
-     * auto_delete: The exchange won't be deleted once the channel is closed.
-     *   The exchange will survive server restarts
-     *
-     * delete the exchange when something has bound to it and then
-     * everything has unbound from it", which again only really makes sense in
-     * the context of exchange to exchange bindings
-     * https://groups.google.com/forum/#!topic/rabbitmq-discuss/YcM_zElQcq8
-     */
-
-    // $ rabbitmqctl list_exchanges
     $channel->exchange_declare($exchangeName,
       $exchangeType,
       $this->exchangeOptions['passive'],
@@ -325,36 +292,33 @@ class MessageBroker
    * @param object $channel
    *  The channel connection that the queue should use.
    *
-   * @return object
+   * @return object $channel
+   *   The updated channel object with the new queue.
+   *
+   * @return array $status
+   *   When a queue is already setup a queue_declare() will return details
+   *   about the existing queue.
+   *     status[1] - message count
+   *     status[2] - unacknowledged count
+   *
+   * passive: If set, the server will reply with Declare-Ok if the queue
+   * already exists with the same name, and raise an error if not. The client
+   * can use this to check whether a queue exists without modifying the server
+   * state. When set, all other method fields except name and no-wait are
+   * ignored. A declare with both passive and no-wait has no effect.
+   * Arguments are compared for semantic equivalence.
+   *
+   * durable: Keep queue even if RabbitMQ is shut down. Note that messages
+   * must also be marked as durable in order for messages in a durable queue
+   * to survive a queue restart.
+   *
+   * exclusive: The queue can be accessed in other channels
+   *
+   * auto_delete: The queue won't be deleted once the channel is closed. If
+   * set, the queue is deleted when all consumers have finished using it.
    */
   public function setupQueue($queueName, $channel) {
 
-    /*
-     * passive: If set, the server will reply with Declare-Ok if the queue
-     * already exists with the same name, and raise an error if not. The client
-     * can use this to check whether a queue exists without modifying the server
-     * state. When set, all other method fields except name and no-wait are
-     * ignored. A declare with both passive and no-wait has no effect.
-     * Arguments are compared for semantic equivalence.
-     *
-     * durable: Keep queue even if RabbitMQ is shut down. Note that messages
-     * must also be marked as durable in order for messages in a durable queue
-     * to survive a queue restart.
-     *
-     * exclusive: The queue can be accessed in other channels
-     *
-     * auto_delete: The queue won't be deleted once the channel is closed. If
-     * set, the queue is deleted when all consumers have finished using it.
-     *
-     * @return object $channel
-     *   The updated channel object with the new queue.
-     *
-     * @return array $status
-     *   When a queue is already setup a queue_declare() will return details
-     *   about the existing queue.
-     *     status[1] - message count
-     *     status[2] - unacknowledged count
-     */
     foreach ($this->queueOptions as $queue => $queueOption) {
       if ($queueOption['name'] == $queueName) {
         $status = $channel->queue_declare($queueName,
