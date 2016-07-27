@@ -1,0 +1,24 @@
+{
+  "name": "messagebroker-phplib",
+  "version": "0.3.0",
+  "description": "Task runner for messagebroker-phplib library to run validation and code linting.",
+  "engines": {
+    "node": ">=4.4.x"
+  },
+  "repository": "https://github.com/DoSomething/messagebroker-phplib",
+  "bugs": "https://github.com/DoSomething/messagebroker-phplib/issues",
+  "author": "Darren Douglas Lee <dlee@dosomething.org>",
+  "license": "MIT",
+  "devDependencies": {
+    "gulp": "^3.9.1",
+    "gulp-notify": "^2.2.0",
+    "gulp-phpcs": "^1.1.1",
+    "gulp-phpunit": "^0.16.0",
+    "gulp-shell": "^0.5.2",
+    "phplint": "^1.7.1"
+  },
+  "scripts": {
+    "test": "php ./vendor/bin/phpunit --verbose tests",
+    "lint": "php ./vendor/bin/phpcs --colors src"
+  }
+}
