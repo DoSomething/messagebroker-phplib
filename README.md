@@ -1,17 +1,86 @@
 messagebroker-phplib
 ====================
 
-A library of functionality shared between the components that make up the DoSomething.org Message Broker system. Components of the system:
+A PHP baed library that ascts as a wrapper around the `php-amqplib/php-amqplib` AMQP PHP library. 
+The goal is to provide utility methods to simplify some of the more common activities of 
+interacting with a AMQP based server. 
 
-- Message Broker Producer (message_broker_producer - Drupal 7.x module): https://github.com/DoSomething/message_broker_producer
-- Message Broker Consumer (message-broker-consumer): https://github.com/DoSomething/message-broker
 
-The PHP library (messagebroker-phplib) is an object wrapper for RabbitMQ functionality. Configuration and connection methods common to the system are shared with the components.  "require":
 
- ####Composer
+ ####Usage
+ 
+ Within the `composer.json` file of any PHP based application include this package with:
  ```
-{
-  "php": ">= 5.3.0",
-  "DoSomething/messagebroker-phplib": "0.2.*",
-}
+   "require": {
+     "php": ">= 5.3.0",
+     "DoSomething/messagebroker-phplib": "0.3.*",
+     ...
+ ```
+ 
+###Create an instance of the class
 ```
+// RabbitMQ
+$rabbitCredentials = [
+    'host' =>  getenv("RABBITMQ_HOST"),
+    'port' => getenv("RABBITMQ_PORT"),
+    'username' => getenv("RABBITMQ_USERNAME"),
+    'password' => getenv("RABBITMQ_PASSWORD"),
+    'vhost' => getenv("RABBITMQ_VHOST"),
+];
+
+$config['exchange'] = array(
+  'name' => $exchangeSettings->name,
+  'type' => $exchangeSettings->type,
+  'passive' => $exchangeSettings->passive,
+  'durable' => $exchangeSettings->durable,
+  'auto_delete' => $exchangeSettings->auto_delete,
+);
+    
+$config['queue'] = array(
+  'name' => $queueSetting->name,
+  'passive' => $queueSetting->passive,
+  'durable' =>  $queueSetting->durable,
+  'exclusive' =>  $queueSetting->exclusive,
+  'auto_delete' =>  $queueSetting->auto_delete,
+  'routingKey' =>  $queueSetting->routing_key,
+  'bindingKey' => $bindingKey,
+);
+
+$mb = new MessageBroker($rabbitCredentials, $config));
+```
+
+###Publish a message
+```
+$this->messageBroker->publish($message, <routing key>);
+```
+
+###Consume a message
+
+How a message will be consumed is defined in the connection to the queue.
+```
+$config['consume'] = array(
+  'no_local' => $queueSetting->consume->no_local,
+  'no_ack' => $queueSetting->consume->no_ack,
+  'nowait' => $queueSetting->consume->nowait,
+  'exclusive' => $queueSetting->consume->exclusive,
+);
+```
+
+The number of messages for the consumer to reserve with each callback. This is Necessary for 
+parallel processing when more than one consumer is running on the same queue.
+
+```
+define('QOS_SIZE', 1);
+
+$mb->consumeMessage([new consumer class(), <consumer method], QOS_SIZE);
+```
+
+where the consumed message details will be sent to consumer method>
+
+```
+ public function <consumer method>($payload) {
+```
+
+####Gulp Support
+###Linting
+- `gulp lint`

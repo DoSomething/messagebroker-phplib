@@ -1,0 +1,15 @@
+<?xml version="1.0"?>
+<ruleset name="Quicksilver Standards">
+    <description>Quicksilver coding standards enforcement rule set for PHP_CodeSniffer</description>
+    <rule ref="PSR2"/>
+    <exclude-pattern>vendor</exclude-pattern>
+    <exclude-pattern>node_modules</exclude-pattern>
+    <rule ref="Squiz.Classes.ValidClassName.NotCamelCaps">
+        <message>No standard class Camel Caps - cool within Quicksilver apps</message>
+        <severity>3</severity>
+    </rule>
+    <rule ref="PSR1.Files.SideEffects.FoundWithSymbols">
+        <message>Interessting warning, not sure of value.</message>
+        <severity>3</severity>
+    </rule>
+</ruleset>

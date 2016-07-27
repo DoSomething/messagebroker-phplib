@@ -1,5 +1,7 @@
-# Ignore configuration files that may contain sensitive information.
-/vendor/
+# Ignore added package file.
+/vendor
+/node_modules
+
 
 # Ignore composer working files
 composer.phar
