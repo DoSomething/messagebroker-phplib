@@ -53,8 +53,8 @@ class MessageBroker
     public function __construct($credentials = array(), $config = [])
     {
     
-        // Cannot continue if the library wasn't loaded.
-        if (!class_exists('AMQPStreamConnection') || !class_exists('AMQPStreamConnection')) {
+        // Cannot continue if the AMQP library wasn't loaded.
+        if (!class_exists(AMQPStreamConnection::class) || !class_exists(AMQPStreamConnection::class)) {
             throw new Exception("Could not find php-amqplib. Please download and
                 install from https://github.com/videlalvaro/php-amqplib/tree/v1.0. See
                 rabbitmq INSTALL file for more details.");
