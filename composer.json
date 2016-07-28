@@ -21,8 +21,8 @@
       "squizlabs/php_codesniffer": "2.*"
     },
     "autoload": {
-        "psr-0": {
-            "MessageBroker": "src/"
-        }
+      "psr-4": {
+        "DoSomething\\MessageBroker\\": "src"
+      }
     }
 }

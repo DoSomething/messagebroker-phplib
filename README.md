@@ -82,5 +82,20 @@ where the consumed message details will be sent to consumer method>
 ```
 
 ####Gulp Support
+Use path directly to gulp `./node_modules/.bin/gulp` or add alias to system config (`.bash_profile`) in alias gulp='./node_modules/.bin/gulp'
+
 ###Linting
 - `gulp lint`
+
+###Linting
+- `gulp test`
+
+See `gulpfile.js` for configuration.
+
+### PHP CodeSniffer
+
+- `php ./vendor/bin/phpcs --standard=./ruleset.xml --colors -s src tests`
+Listing of all coding volations by file.
+
+- `php ./vendor/bin/phpcbf --standard=./ruleset.xml --colors src tests`
+Automated processing of files to adjust to meeting coding standards.
