@@ -343,6 +343,6 @@ class MessageBroker
         }
 
         // Error as queue has not been setup
-        trigger_error($queueName . ' options not found in $this->queueOptions.', E_USER_WARNING);
+        throw new Exception($queueName . ' options not found in $this->queueOptions.');
     }
 }
