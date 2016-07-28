@@ -5,6 +5,8 @@
 
 namespace DoSomething\MessageBroker;
 
+use DoSomething\MessageBroker\MessageBroker;
+
 /**
  * Class ExceptionTest
  *
@@ -24,22 +26,26 @@ class ExceptionTest extends \PHPUnit_Framework_TestCase
     public function setUp()
     {
         require_once __DIR__ . '/MessageBrokerTest.config.inc';
-        $this->mb = new MessageBroker();
+        // $this->mb = new MessageBroker($credentials);
     }
 
     /**
-     * @covers \DoSomething\MBC_UserImport\MBC_UserImport_Consumer::canProcess
-     * @uses   \DoSomething\MBC_UserImport\MBC_UserImport_Consumer
+     * @covers \DoSomething\MessageBroker\MessageBroker::__construct
+     * @uses   \DoSomething\MessageBroker\MessageBroker
      * @expectedException Exception
      */
     public function testException()
     {
-        // Empty source
-        $message = [];
-        $this->mbcUserImportConsumer->canProcess($message);
-
-        // Unsupported source
-        $message['source'] = 'TeenLife';
-        $this->mbcUserImportConsumer->canProcess($message);
+        // AMQPStreamConnection and AMQPMessage not loading
+        $credentials = [];
+        $config = [];
+        // $this->mb->__construct($credentials, $config);
+    
+        // Throw Exception when payload is undefined
+        $payload = null;
+        // $mb = new MessageBroker($payload);
+        // $mb->publish($payload);
     }
+    
+    
 }
