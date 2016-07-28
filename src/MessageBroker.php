@@ -78,10 +78,10 @@ class MessageBroker
         }
         $this->consumeOptions = [
             'consumer_tag' => isset($config['consume']['consumer_tag']) ? $config['consume']['consumer_tag'] : '',
-            'no_local' => isset($config['consume']['no_local']) ? $config['consume']['no_local'] : flase,
+            'no_local' => isset($config['consume']['no_local']) ? $config['consume']['no_local'] : false,
             'no_ack' => isset($config['consume']['no_ack']) ? $config['consume']['no_ack'] : true,
             'exclusive' => isset($config['consume']['exclusive']) ? $config['consume']['exclusive'] : false,
-            'nowait' => isset($config['consume']['nowait']) ? $config['consume']['nowait'] : flase,
+            'nowait' => isset($config['consume']['nowait']) ? $config['consume']['nowait'] : false,
         ];
 
         $this->exchangeOptions = [
