@@ -1,6 +1,6 @@
 {
   "name": "messagebroker-phplib",
-  "version": "0.3.0",
+  "version": "0.3.3",
   "description": "Task runner for messagebroker-phplib library to run validation and code linting.",
   "engines": {
     "node": ">=4.4.x"
