@@ -2,7 +2,6 @@
 /vendor
 /node_modules
 
-
 # Ignore composer working files
 composer.phar
 composer.lock
