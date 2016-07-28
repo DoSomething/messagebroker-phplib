@@ -138,6 +138,10 @@ class MessageBroker
     public function publish($payload, $routingKey = null, $deliveryMode = 1)
     {
 
+        if (empty($payload)) {
+            throw new Exception('publish: payload not set.');
+        }
+
         $channel = $this->connection->channel();
 
         // Exchange setup
@@ -224,6 +228,11 @@ class MessageBroker
      */
     public function sendAck($payload)
     {
+
+        if (empty($payload->delivery_info['delivery_tag'])) {
+            throw new Exception('sendAck: delivery_tag not set.');
+        }
+
         $payload->delivery_info['channel']->basic_ack($payload->delivery_info['delivery_tag']);
     }
 
@@ -242,6 +251,11 @@ class MessageBroker
      */
     public function sendNack($payload, $purge = false, $requeue = true)
     {
+
+        if (empty($payload->delivery_info['delivery_tag'])) {
+            throw new Exception('sendNack: delivery_tag not set.');
+        }
+
         $payload->delivery_info['channel']->basic_nack($payload->delivery_info['delivery_tag'], $purge, $requeue);
     }
 
