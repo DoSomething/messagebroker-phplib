@@ -52,13 +52,13 @@ class MessageBroker
      */
     public function __construct($credentials = array(), $config = [])
     {
-    
-        // Cannot continue if the AMQP library wasn't loaded.
-        if (!class_exists(AMQPStreamConnection::class) || !class_exists(AMQPStreamConnection::class)) {
-            throw new Exception("Could not find php-amqplib. Please download and
-                install from https://github.com/videlalvaro/php-amqplib/tree/v1.0. See
-                rabbitmq INSTALL file for more details.");
+
+        // Cannot continue if the library wasn't loaded.
+        if (!class_exists(AMQPStreamConnection::class) || !class_exists(AMQPMessage::class)) {
+            throw new Exception("Could not find required php-amqplib library. Please download and
+                install from https://github.com/php-amqplib/php-amqplib.");
         }
+
         // Connect - AMQPConnection(HOST, PORT, USER, PASS, VHOST);
         if ($credentials['vhost'] != '') {
             $this->connection = new AMQPStreamConnection(
