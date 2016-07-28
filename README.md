@@ -3,7 +3,7 @@ messagebroker-phplib
 
 A PHP baed library that ascts as a wrapper around the `php-amqplib/php-amqplib` AMQP PHP library. 
 The goal is to provide utility methods to simplify some of the more common activities of 
-interacting with a AMQP based server. 
+interacting with a AMQP based (RabbitMQ) server. 
 
 
 
@@ -94,8 +94,8 @@ See `gulpfile.js` for configuration.
 
 ### PHP CodeSniffer
 
-- `php ./vendor/bin/phpcs --standard=./ruleset.xml --colors -s src tests`
+- `php ./vendor/bin/phpcs --standard=./ruleset.xml --colors -s MessageBroker-Drupal.php src tests`
 Listing of all coding volations by file.
 
-- `php ./vendor/bin/phpcbf --standard=./ruleset.xml --colors src tests`
+- `php ./vendor/bin/phpcbf --standard=./ruleset.xml --colors MessageBroker-Drupal.php src tests`
 Automated processing of files to adjust to meeting coding standards.
