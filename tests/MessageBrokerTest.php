@@ -6,6 +6,7 @@
 namespace DoSomething\MessageBroker;
 
 use DoSomething\MB_Toolbox\MB_Configuration;
+use DoSomething\MessageBroker\MessageBroker;
 
 /**
  * Class MessageBroker
