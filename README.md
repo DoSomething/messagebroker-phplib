@@ -82,20 +82,28 @@ where the consumed message details will be sent to consumer method>
 ```
 
 ####Gulp Support
-Use path directly to gulp `./node_modules/.bin/gulp` or add alias to system config (`.bash_profile`) in alias gulp='./node_modules/.bin/gulp'
+Use a path directly to gulp `./node_modules/.bin/gulp` or add an alias to your system config (`.bash_profile`) as `alias gulp='./node_modules/.bin/gulp'`
 
 ###Linting
 - `gulp lint`
 
-###Linting
-- `gulp test`
+See `gulpfile.js` for configuration and combinations of tasks.
 
-See `gulpfile.js` for configuration.
-
-### PHP CodeSniffer
+##PHP CodeSniffer
 
 - `php ./vendor/bin/phpcs --standard=./ruleset.xml --colors -s MessageBroker-Drupal.php src tests`
 Listing of all coding volations by file.
 
 - `php ./vendor/bin/phpcbf --standard=./ruleset.xml --colors MessageBroker-Drupal.php src tests`
 Automated processing of files to adjust to meeting coding standards.
+
+###Test Coverage
+- `gulp test`
+
+or
+
+- `npm test`
+
+##PHP Unit
+
+- `$ ./vendor/bin/phpunit --verbose tests`

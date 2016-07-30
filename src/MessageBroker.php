@@ -105,6 +105,30 @@ class MessageBroker
             ];
         }
         $this->queueOptions = $queueOptions;
+
+        /**
+         * Routing Key is the routing value for topic exchanges, example:
+         * '*.*.transactional'
+         * $channel->queue_bind($transactionalQueue, $exchangeName, '*.*.transactional');
+         * This value may not be relevant for non "topic" exchanges??
+         *
+         * There might be some confusion between using this setting for queue_bind
+         * and basic_publish. The confusion is between routingKey and bindingKey,
+         * topic vs direct exchanges.
+         *
+         * -> queue_bind routing keys define the combination of keys
+         * of messages that get routed to certain queues.
+         * -> basic_publish sets the keys assigned to a message
+         *
+         * An exchange with a routing key binding of *.*.transactional will get an
+         * entry for all messages sent with a routing key of:
+         * user.registration.transactional
+         *
+         * In the case of "direct" exchanges, the routing key must be a exact match
+         * with the routing key assigned to the message. This value can be blank but
+         * it must be the same for both the queue and message value.
+         */
+         $this->routingKey = isset($config['routingKey']) ? $config['routingKey'] : '';
     }
 
     /**
