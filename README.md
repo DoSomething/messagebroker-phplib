@@ -7,7 +7,7 @@ interacting with a AMQP based (RabbitMQ) server.
 
 
 
- ####Usage
+### Usage
  
  Within the `composer.json` file of any PHP based application include this package with:
  ```
@@ -17,7 +17,7 @@ interacting with a AMQP based (RabbitMQ) server.
      ...
  ```
  
-###Create an instance of the class
+### Create an instance of the class
 ```
 // RabbitMQ
 $rabbitCredentials = [
