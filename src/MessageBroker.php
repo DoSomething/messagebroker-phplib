@@ -276,7 +276,8 @@ class MessageBroker
         $this->channel = $channel;
         $data = [];
         while ($message = $this->channel->basic_get($queueOption['name'])) {
-            if ($message) {
+            if ($message->delivery_info) {
+                $message->delivery_info['channel'] = $this->channel;
                 $data[] = $message;
             }
         }
