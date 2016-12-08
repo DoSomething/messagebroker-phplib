@@ -20,21 +20,21 @@ class MessageBroker
      * @var object
      */
     public $connection;
-    
+
     /**
      * Collection of consume options.
      *
      * @var array
      */
     private $consumeOptions;
-    
+
     /**
      * Collection of exchange options.
      *
      * @var array
      */
     private $exchangeOptions;
-    
+
     /**
      * Collection of queue options.
      *
@@ -145,7 +145,7 @@ class MessageBroker
      */
     public function __destruct()
     {
-    
+
         $this->connection->close();
     }
 
@@ -181,7 +181,7 @@ class MessageBroker
         foreach ($this->queueOptions as $queueOption) {
             // Queue setup
             list($channel, ) = $this->setupQueue($queueOption['name'], $channel);
-            
+
             // Bind the queue to the exchange
             $channel->queue_bind($queueOption['name'], $this->exchangeOptions['name'], $queueOption['bindingKey']);
         }
@@ -247,7 +247,41 @@ class MessageBroker
         while (count($this->channel->callbacks)) {
             $this->channel->wait();
         }
-        
+
+        $this->channel->close();
+    }
+
+    /**
+     * Consume all messages from the message broker queue.
+     *
+     * @param $callback
+     *  Callback to handle messages the consumer receives.
+     */
+    public function getAllMessages($callback)
+    {
+
+        $channel = $this->connection->channel();
+
+        // Exchange setup
+        $this->setupExchange($this->exchangeOptions['name'], $this->exchangeOptions['type'], $channel);
+
+        foreach ($this->queueOptions as $queueOption) {
+            // Queue setup
+            list($channel, ) = $this->setupQueue($queueOption['name'], $channel);
+
+            // Bind the queue to the exchange
+            $channel->queue_bind($queueOption['name'], $this->exchangeOptions['name'], $queueOption['bindingKey']);
+        }
+
+        $this->channel = $channel;
+        $data = [];
+        while ($message = $this->channel->basic_get($queueOption['name'])) {
+            if ($message) {
+                $data[] = $message;
+            }
+        }
+
+        call_user_func($callback, $data);
         $this->channel->close();
     }
 
@@ -324,7 +358,7 @@ class MessageBroker
      */
     public function setupExchange($exchangeName, $exchangeType, $channel)
     {
-    
+
         $channel->exchange_declare(
             $exchangeName,
             $exchangeType,
@@ -332,7 +366,7 @@ class MessageBroker
             $this->exchangeOptions['durable'],
             $this->exchangeOptions['auto_delete']
         );
-        
+
         return $channel;
     }
 
@@ -374,7 +408,7 @@ class MessageBroker
      */
     public function setupQueue($queueName, $channel)
     {
-    
+
         foreach ($this->queueOptions as $queue => $queueOption) {
             if ($queueOption['name'] == $queueName) {
                 $status = $channel->queue_declare(
