@@ -43,6 +43,13 @@ class MessageBroker
     private $queueOptions;
 
     /**
+     * Current channel to consume.
+     *
+     * @var AMQPChannel
+     */
+    private $channel;
+
+    /**
      * Constructor
      *
      * @param array $credentials
