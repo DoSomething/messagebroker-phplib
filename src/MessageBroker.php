@@ -396,11 +396,18 @@ class MessageBroker
      * Close the channel to the server by removing channel callbacks.
      *
      * @see MessageBroker::consume()  The while loop.
+     *
+     * @return  bool Operation result.
      */
     public function stop()
     {
-        echo 'Stopping consumer by removing callbacks.' . PHP_EOL;
-        $this->channel->callbacks = null;
+        if (!empty($this->channel)) {
+            echo 'Stopping consumer by removing callbacks.' . PHP_EOL;
+            $this->channel->callbacks = null;
+            return true;
+        } else {
+            return false;
+        }
     }
 
 }
