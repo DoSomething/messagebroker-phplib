@@ -43,6 +43,13 @@ class MessageBroker
     private $queueOptions;
 
     /**
+     * Current channel to consume.
+     *
+     * @var AMQPChannel
+     */
+    private $channel;
+
+    /**
      * Constructor
      *
      * @param array $credentials
@@ -236,11 +243,12 @@ class MessageBroker
 
         // Wait for messages on the channel
         echo ' [*] Waiting for messages = ' . date('D M j G:i:s T Y') . '. To exit press CTRL+C', PHP_EOL;
-        while (count($channel->callbacks)) {
-            $channel->wait();
+        $this->channel = $channel;
+        while (count($this->channel->callbacks)) {
+            $this->channel->wait();
         }
         
-        $channel->close();
+        $this->channel->close();
     }
 
     /**
@@ -383,4 +391,23 @@ class MessageBroker
         // Error as queue has not been setup
         throw new Exception($queueName . ' options not found in $this->queueOptions.');
     }
+
+    /**
+     * Close the channel to the server by removing channel callbacks.
+     *
+     * @see MessageBroker::consume()  The while loop.
+     *
+     * @return  bool Operation result.
+     */
+    public function stop()
+    {
+        if (!empty($this->channel)) {
+            echo 'Stopping consumer by removing callbacks.' . PHP_EOL;
+            $this->channel->callbacks = null;
+            return true;
+        } else {
+            return false;
+        }
+    }
+
 }
